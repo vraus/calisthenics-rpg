@@ -1,7 +1,8 @@
 /**
- * Charge seed/trees.json (exercise_families + exercises) et seed/badges.json
- * (badges) dans Supabase. Idempotent : upsert sur le slug, exécutable
- * plusieurs fois sans dupliquer.
+ * Charge seed/trees.json (exercise_families + exercises), seed/badges.json
+ * (badges) et seed/session_templates.json (templates de séance) dans
+ * Supabase. Idempotent : upsert sur le slug, exécutable plusieurs fois sans
+ * dupliquer.
  *
  * Usage : npm run seed
  * Requiert dans l'environnement : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -42,6 +43,24 @@ interface SeedBadge {
   name: string;
   description: string;
   sortOrder: number;
+}
+
+interface SeedSessionTemplateExercise {
+  exerciseSlug: string;
+  targetSets: number;
+  targetPerformance: number;
+  restBetweenSetsSeconds: number;
+  restAfterExerciseSeconds: number;
+  sortOrder: number;
+}
+
+interface SeedSessionTemplate {
+  slug: string;
+  name: string;
+  sortOrder: number;
+  rounds: number;
+  restBetweenRoundsSeconds: number;
+  exercises: SeedSessionTemplateExercise[];
 }
 
 async function main() {
@@ -122,6 +141,74 @@ async function main() {
   }
 
   console.log(`✓ Badges (${badgesData.badges.length})`);
+
+  const templatesRaw = readFileSync(
+    path.join(__dirname, "..", "seed", "session_templates.json"),
+    "utf-8"
+  );
+  const templatesData = JSON.parse(templatesRaw) as { templates: SeedSessionTemplate[] };
+
+  const { data: allExercises, error: allExercisesError } = await supabase
+    .from("exercises")
+    .select("id, slug");
+  if (allExercisesError || !allExercises) {
+    throw new Error(`Échec lecture des exercices pour les templates: ${allExercisesError?.message}`);
+  }
+  const exerciseIdBySlug = new Map(allExercises.map((e) => [e.slug, e.id]));
+
+  for (const template of templatesData.templates) {
+    const { data: templateRow, error: templateError } = await supabase
+      .from("session_templates")
+      .upsert(
+        {
+          slug: template.slug,
+          name: template.name,
+          sort_order: template.sortOrder,
+          rounds: template.rounds,
+          rest_between_rounds_seconds: template.restBetweenRoundsSeconds,
+        },
+        { onConflict: "slug" }
+      )
+      .select("id")
+      .single();
+
+    if (templateError || !templateRow) {
+      throw new Error(`Échec upsert template "${template.slug}": ${templateError?.message}`);
+    }
+
+    // Repartir de zéro à chaque seed plutôt que d'upsert : plus simple pour
+    // refléter exactement le JSON (ajout/retrait/réordonnancement d'exos).
+    const { error: deleteError } = await supabase
+      .from("session_template_exercises")
+      .delete()
+      .eq("session_template_id", templateRow.id);
+    if (deleteError) {
+      throw new Error(`Échec nettoyage des exos du template "${template.slug}": ${deleteError.message}`);
+    }
+
+    const exerciseRows = template.exercises.map((ex) => {
+      const exerciseId = exerciseIdBySlug.get(ex.exerciseSlug);
+      if (!exerciseId) {
+        throw new Error(`Exercice inconnu "${ex.exerciseSlug}" dans le template "${template.slug}"`);
+      }
+      return {
+        session_template_id: templateRow.id,
+        exercise_id: exerciseId,
+        target_sets: ex.targetSets,
+        target_performance: ex.targetPerformance,
+        rest_between_sets_seconds: ex.restBetweenSetsSeconds,
+        rest_after_exercise_seconds: ex.restAfterExerciseSeconds,
+        sort_order: ex.sortOrder,
+      };
+    });
+
+    const { error: insertError } = await supabase.from("session_template_exercises").insert(exerciseRows);
+    if (insertError) {
+      throw new Error(`Échec insertion des exos du template "${template.slug}": ${insertError.message}`);
+    }
+
+    console.log(`✓ Template "${template.name}" (${exerciseRows.length} exercices)`);
+  }
 
   console.log("Seed terminé.");
 }

@@ -1,5 +1,5 @@
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { getFamiliesWithExercises, getWeeklyPlan } from "@/lib/data";
+import { getFamiliesWithExercises, getSessionTemplates, getWeeklyPlan } from "@/lib/data";
 import WeekEditor from "./week-editor";
 import DeleteWeekButton from "./delete-week-button";
 
@@ -29,9 +29,10 @@ export default async function EditWeekPage({
     );
   }
 
-  const [familiesWithExercises, plan] = await Promise.all([
+  const [familiesWithExercises, plan, sessionTemplates] = await Promise.all([
     getFamiliesWithExercises(),
     getWeeklyPlan(userId, weekStart),
+    getSessionTemplates(),
   ]);
 
   return (
@@ -40,7 +41,12 @@ export default async function EditWeekPage({
         <h1 className="font-display text-xl font-bold">Semaine du {formatWeek(weekStart)}</h1>
         {plan ? <DeleteWeekButton weekStart={weekStart} /> : null}
       </div>
-      <WeekEditor weekStart={weekStart} plan={plan} familiesWithExercises={familiesWithExercises} />
+      <WeekEditor
+        weekStart={weekStart}
+        plan={plan}
+        familiesWithExercises={familiesWithExercises}
+        sessionTemplates={sessionTemplates}
+      />
     </main>
   );
 }

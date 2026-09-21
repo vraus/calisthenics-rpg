@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  DayKind,
   DayOfWeek,
   Exercise,
   ExerciseFamily,
@@ -9,6 +10,7 @@ import type {
   PlannedSet,
   Profile,
   ProfileSummary,
+  SessionTemplate,
   UnlockType,
   UserProgress,
   WeeklyPlan,
@@ -188,7 +190,7 @@ export async function getRestDayCompletionDates(userId: string): Promise<string[
     .from("planned_sessions")
     .select("completed_at")
     .eq("user_id", userId)
-    .eq("is_rest_day", true)
+    .eq("day_kind", "rest")
     .not("completed_at", "is", null);
 
   if (error) throw new Error(`getRestDayCompletionDates: ${error.message}`);
@@ -214,6 +216,8 @@ function mapPlannedExerciseRows(exerciseRows: any[], setRows: any[]): PlannedExe
       unlockType: (ex?.unlock_type as UnlockType) ?? "reps",
       targetSets: e.target_sets,
       targetPerformance: e.target_performance,
+      restBetweenSetsSeconds: e.rest_between_sets_seconds,
+      restAfterExerciseSeconds: e.rest_after_exercise_seconds,
       sets: (setsByExercise.get(e.id) ?? []).sort((a, b) => a.setNumber - b.setNumber),
     };
   });
@@ -233,8 +237,58 @@ export async function getPlannedWeekStarts(userId: string, weekStarts: string[])
   return new Set((data ?? []).map((row) => row.week_start as string));
 }
 
+/**
+ * Reusable exercise circuits (e.g. "HIIT", more to come), for the week
+ * editor's "start from a template" picker — an alternative to "Custom" when
+ * building a "session" day.
+ */
+export async function getSessionTemplates(): Promise<SessionTemplate[]> {
+  const supabase = await createClient();
+  const { data: templateRows, error: templatesError } = await supabase
+    .from("session_templates")
+    .select("id, name, rounds, rest_between_rounds_seconds")
+    .order("sort_order");
+
+  if (templatesError) throw new Error(`getSessionTemplates: ${templatesError.message}`);
+  if (!templateRows || templateRows.length === 0) return [];
+
+  const { data: exerciseRows, error: exercisesError } = await supabase
+    .from("session_template_exercises")
+    .select(
+      "id, session_template_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type)"
+    )
+    .in(
+      "session_template_id",
+      templateRows.map((t) => t.id)
+    )
+    .order("sort_order");
+
+  if (exercisesError) throw new Error(`getSessionTemplates: ${exercisesError.message}`);
+
+  return templateRows.map((t) => ({
+    id: t.id,
+    name: t.name,
+    rounds: t.rounds,
+    restBetweenRoundsSeconds: t.rest_between_rounds_seconds,
+    exercises: (exerciseRows ?? [])
+      .filter((e) => e.session_template_id === t.id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((e: any) => ({
+        id: e.id,
+        exerciseId: e.exercise_id,
+        exerciseName: e.exercises?.name ?? "Exercice",
+        exerciseSlug: e.exercises?.slug ?? "",
+        unlockType: (e.exercises?.unlock_type as UnlockType) ?? "reps",
+        targetSets: e.target_sets,
+        targetPerformance: e.target_performance,
+        restBetweenSetsSeconds: e.rest_between_sets_seconds,
+        restAfterExerciseSeconds: e.rest_after_exercise_seconds,
+      })),
+  }));
+}
+
 const PLANNED_EXERCISE_SELECT =
-  "id, planned_session_id, exercise_id, target_sets, target_performance, sort_order, exercises(name, slug, unlock_type)";
+  "id, planned_session_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type)";
 
 /** The current week's plan (if any) for this user, fully nested. */
 export async function getWeeklyPlan(userId: string, weekStart: string): Promise<WeeklyPlan | null> {
@@ -252,7 +306,7 @@ export async function getWeeklyPlan(userId: string, weekStart: string): Promise<
 
   const { data: sessionRows, error: sessionsError } = await supabase
     .from("planned_sessions")
-    .select("id, weekly_plan_id, label, sort_order, day_of_week, is_rest_day, completed_at, full_completion")
+    .select("id, weekly_plan_id, label, sort_order, day_of_week, day_kind, rounds, rest_between_rounds_seconds, completed_at, full_completion")
     .eq("weekly_plan_id", planRow.id)
     .order("sort_order");
 
@@ -300,7 +354,9 @@ export async function getWeeklyPlan(userId: string, weekStart: string): Promise<
       label: s.label,
       sortOrder: s.sort_order,
       dayOfWeek: (s.day_of_week ?? undefined) as DayOfWeek | undefined,
-      isRestDay: s.is_rest_day,
+      dayKind: s.day_kind as DayKind,
+      rounds: s.rounds,
+      restBetweenRoundsSeconds: s.rest_between_rounds_seconds,
       completedAt: s.completed_at ?? undefined,
       fullCompletion: s.full_completion,
       exercises: exercisesBySession.get(s.id) ?? [],
@@ -317,7 +373,7 @@ export async function getPlannedSessionDetail(
 
   const { data: sessionRow, error: sessionError } = await supabase
     .from("planned_sessions")
-    .select("id, weekly_plan_id, label, sort_order, day_of_week, is_rest_day, completed_at, full_completion")
+    .select("id, weekly_plan_id, label, sort_order, day_of_week, day_kind, rounds, rest_between_rounds_seconds, completed_at, full_completion")
     .eq("id", plannedSessionId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -349,7 +405,9 @@ export async function getPlannedSessionDetail(
     label: sessionRow.label,
     sortOrder: sessionRow.sort_order,
     dayOfWeek: (sessionRow.day_of_week ?? undefined) as DayOfWeek | undefined,
-    isRestDay: sessionRow.is_rest_day,
+    dayKind: sessionRow.day_kind as DayKind,
+    rounds: sessionRow.rounds,
+    restBetweenRoundsSeconds: sessionRow.rest_between_rounds_seconds,
     completedAt: sessionRow.completed_at ?? undefined,
     fullCompletion: sessionRow.full_completion,
     exercises: mapPlannedExerciseRows(exerciseRows ?? [], setRows ?? []),

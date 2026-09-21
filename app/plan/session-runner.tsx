@@ -158,7 +158,7 @@ export default function SessionRunner({
     }
   }
 
-  if (session.isRestDay) {
+  if (session.dayKind === "rest") {
     if (finalized) {
       return (
         <div
@@ -235,6 +235,11 @@ export default function SessionRunner({
 
   return (
     <div className="flex flex-col gap-4">
+      {session.rounds > 1 ? (
+        <p className="text-sm text-muted">
+          {session.rounds} tours · {session.restBetweenRoundsSeconds}s de repos entre chaque tour
+        </p>
+      ) : null}
       {session.exercises.map((exercise) => {
         const remaining = exercise.sets.filter((s) => !doneSetIds.has(s.id)).length;
         return (
@@ -266,6 +271,14 @@ export default function SessionRunner({
                 );
               })}
             </div>
+            <p className="text-xs text-muted">
+              Repos : {exercise.restBetweenSetsSeconds}s entre séries ·{" "}
+              {Math.round(exercise.restAfterExerciseSeconds / 60) >= 1 &&
+              exercise.restAfterExerciseSeconds % 60 === 0
+                ? `${exercise.restAfterExerciseSeconds / 60} min`
+                : `${exercise.restAfterExerciseSeconds}s`}{" "}
+              avant l&apos;exercice suivant
+            </p>
             {remaining > 1 ? (
               <button
                 type="button"

@@ -295,6 +295,70 @@
           "xpCoefficient": 3.5
         }
       ]
+    },
+    {
+      "slug": "hiit",
+      "name": "HIIT",
+      "statTag": "cardio",
+      "sortOrder": 5,
+      "exercises": [
+        {
+          "slug": "burpee",
+          "name": "Burpee",
+          "tier": 1,
+          "unlockType": "reps",
+          "unlockThreshold": 10,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "bateau",
+          "name": "Bateau",
+          "tier": 2,
+          "unlockType": "duration",
+          "unlockThreshold": 30,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "jumping-jack",
+          "name": "Jumping jack",
+          "tier": 3,
+          "unlockType": "reps",
+          "unlockThreshold": 30,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "twist-russe",
+          "name": "Twist russe",
+          "tier": 4,
+          "unlockType": "reps",
+          "unlockThreshold": 20,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "gainage-cote",
+          "name": "Gainage côté",
+          "tier": 5,
+          "unlockType": "duration",
+          "unlockThreshold": 30,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "mountain-climber",
+          "name": "Mountain climber",
+          "tier": 6,
+          "unlockType": "reps",
+          "unlockThreshold": 30,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "situp-chaise",
+          "name": "Sit-up en chaise",
+          "tier": 7,
+          "unlockType": "reps",
+          "unlockThreshold": 15,
+          "xpCoefficient": 0.3
+        }
+      ]
     }
   ]
 }

@@ -78,14 +78,14 @@ function WeekTile({
                 </span>
                 {s.completedAt ? (
                   <span className={s.fullCompletion ? "text-gold" : "text-muted"}>
-                    {s.isRestDay ? "Repos" : s.label} ✓
+                    {s.dayKind === "rest" ? "Repos" : s.label} ✓
                   </span>
                 ) : (
                   // Always /log, never this specific day: only today's plan
                   // can be executed (see app/log/page.tsx), so there's no
                   // per-day detail route to link to anymore.
                   <Link href="/log" className="text-accent-strong">
-                    {s.isRestDay ? "Repos" : s.label}
+                    {s.dayKind === "rest" ? "Repos" : s.label}
                   </Link>
                 )}
               </li>

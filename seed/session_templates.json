@@ -1,0 +1,69 @@
+{
+  "templates": [
+    {
+      "slug": "seance-hiit",
+      "name": "Séance HIIT",
+      "sortOrder": 1,
+      "rounds": 4,
+      "restBetweenRoundsSeconds": 60,
+      "exercises": [
+        {
+          "exerciseSlug": "burpee",
+          "targetSets": 1,
+          "targetPerformance": 10,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 1
+        },
+        {
+          "exerciseSlug": "bateau",
+          "targetSets": 1,
+          "targetPerformance": 30,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 2
+        },
+        {
+          "exerciseSlug": "jumping-jack",
+          "targetSets": 1,
+          "targetPerformance": 30,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 3
+        },
+        {
+          "exerciseSlug": "twist-russe",
+          "targetSets": 1,
+          "targetPerformance": 20,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 4
+        },
+        {
+          "exerciseSlug": "gainage-cote",
+          "targetSets": 1,
+          "targetPerformance": 30,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 5
+        },
+        {
+          "exerciseSlug": "mountain-climber",
+          "targetSets": 1,
+          "targetPerformance": 30,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 6
+        },
+        {
+          "exerciseSlug": "situp-chaise",
+          "targetSets": 1,
+          "targetPerformance": 15,
+          "restBetweenSetsSeconds": 0,
+          "restAfterExerciseSeconds": 20,
+          "sortOrder": 7
+        }
+      ]
+    }
+  ]
+}

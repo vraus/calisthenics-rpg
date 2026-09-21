@@ -44,16 +44,31 @@ export async function deleteWeeklyPlan(weekStart: string): Promise<CreatePlanRes
   return { ok: true };
 }
 
+interface DayExerciseInput {
+  exerciseId: string;
+  targetSets: number;
+  targetPerformance: number;
+  restBetweenSetsSeconds?: number;
+  restAfterExerciseSeconds?: number;
+}
+
 interface DayInput {
   dayOfWeek: number;
   kind: "rest" | "session" | "unset";
   label?: string;
-  exercises?: { exerciseId: string; targetSets: number }[];
+  exercises?: DayExerciseInput[];
+  rounds?: number;
+  restBetweenRoundsSeconds?: number;
 }
 
+const DEFAULT_REST_BETWEEN_SETS_SECONDS = 30;
+const DEFAULT_REST_AFTER_EXERCISE_SECONDS = 60;
+const DEFAULT_ROUNDS = 1;
+const DEFAULT_REST_BETWEEN_ROUNDS_SECONDS = 90;
+
 /** True if this day (existing DB row) has any progress and can't be touched. */
-function dayIsLocked(isRestDay: boolean, completedAt: string | null, hasDoneSet: boolean): boolean {
-  return isRestDay ? Boolean(completedAt) : hasDoneSet;
+function dayIsLocked(dayKind: string, completedAt: string | null, hasDoneSet: boolean): boolean {
+  return dayKind === "rest" ? Boolean(completedAt) : hasDoneSet;
 }
 
 /**
@@ -81,7 +96,10 @@ export async function saveWeeklyPlanDays(
     return { ok: false, error: "Plan invalide." };
   }
   for (const d of days) {
-    if (d.kind === "session" && (!d.label || !Array.isArray(d.exercises) || d.exercises.length === 0)) {
+    if (
+      d.kind === "session" &&
+      (!d.label || !Array.isArray(d.exercises) || d.exercises.length === 0)
+    ) {
       return { ok: false, error: "Chaque jour de séance doit avoir un nom et au moins un exercice." };
     }
   }
@@ -108,7 +126,7 @@ export async function saveWeeklyPlanDays(
 
   const { data: existingSessions } = await supabase
     .from("planned_sessions")
-    .select("id, day_of_week, is_rest_day, completed_at")
+    .select("id, day_of_week, day_kind, completed_at")
     .eq("weekly_plan_id", planId);
 
   const existingSessionIds = (existingSessions ?? []).map((s) => s.id);
@@ -142,14 +160,14 @@ export async function saveWeeklyPlanDays(
     ),
   ];
   const { data: exerciseRows } = allExerciseIds.length
-    ? await supabase.from("exercises").select("id, unlock_type, unlock_threshold").in("id", allExerciseIds)
+    ? await supabase.from("exercises").select("id").in("id", allExerciseIds)
     : { data: [] };
-  const exerciseById = new Map((exerciseRows ?? []).map((e) => [e.id, e]));
+  const validExerciseIds = new Set((exerciseRows ?? []).map((e) => e.id));
 
   for (const day of days) {
     const existing = existingByDay.get(day.dayOfWeek);
     const locked = existing
-      ? dayIsLocked(existing.is_rest_day, existing.completed_at, sessionsWithDoneSet.has(existing.id))
+      ? dayIsLocked(existing.day_kind, existing.completed_at, sessionsWithDoneSet.has(existing.id))
       : false;
     if (locked) continue;
 
@@ -159,6 +177,12 @@ export async function saveWeeklyPlanDays(
 
     if (day.kind === "unset") continue;
 
+    const rounds = Math.max(1, Math.floor(Number(day.rounds) || DEFAULT_ROUNDS));
+    const restBetweenRoundsSeconds = Math.max(
+      0,
+      Math.floor(Number(day.restBetweenRoundsSeconds) || DEFAULT_REST_BETWEEN_ROUNDS_SECONDS)
+    );
+
     const { data: sessionRow, error: sessionError } = await supabase
       .from("planned_sessions")
       .insert({
@@ -167,7 +191,9 @@ export async function saveWeeklyPlanDays(
         label: day.kind === "rest" ? "Repos" : day.label,
         sort_order: day.dayOfWeek,
         day_of_week: day.dayOfWeek,
-        is_rest_day: day.kind === "rest",
+        day_kind: day.kind,
+        rounds,
+        rest_between_rounds_seconds: restBetweenRoundsSeconds,
       })
       .select("id")
       .single();
@@ -179,18 +205,28 @@ export async function saveWeeklyPlanDays(
     if (day.kind === "session") {
       for (let j = 0; j < (day.exercises ?? []).length; j++) {
         const planned = day.exercises![j];
-        const exercise = exerciseById.get(planned.exerciseId);
-        if (!exercise) continue;
+        if (!validExerciseIds.has(planned.exerciseId)) continue;
         const targetSets = Math.max(1, Math.floor(Number(planned.targetSets) || 1));
+        const targetPerformance = Math.max(1, Math.floor(Number(planned.targetPerformance) || 1));
+        const restBetweenSetsSeconds = Math.max(
+          0,
+          Math.floor(Number(planned.restBetweenSetsSeconds) || DEFAULT_REST_BETWEEN_SETS_SECONDS)
+        );
+        const restAfterExerciseSeconds = Math.max(
+          0,
+          Math.floor(Number(planned.restAfterExerciseSeconds) || DEFAULT_REST_AFTER_EXERCISE_SECONDS)
+        );
 
         const { data: exerciseRow, error: plannedExError } = await supabase
           .from("planned_exercises")
           .insert({
             planned_session_id: sessionRow.id,
             user_id: userId,
-            exercise_id: exercise.id,
+            exercise_id: planned.exerciseId,
             target_sets: targetSets,
-            target_performance: exercise.unlock_threshold,
+            target_performance: targetPerformance,
+            rest_between_sets_seconds: restBetweenSetsSeconds,
+            rest_after_exercise_seconds: restAfterExerciseSeconds,
             sort_order: j,
           })
           .select("id")
@@ -200,7 +236,11 @@ export async function saveWeeklyPlanDays(
           return { ok: false, error: "Échec de la création d'un exercice planifié." };
         }
 
-        const setRows = Array.from({ length: targetSets }, (_, k) => ({
+        // targetSets is "per round" as entered in the editor — the actual
+        // number of validatable sets is that times the day's round count
+        // (e.g. 3 tours × 3 séries = 9 cases), tracking rounds isn't its
+        // own concept yet, just a multiplier on the flat set list.
+        const setRows = Array.from({ length: targetSets * rounds }, (_, k) => ({
           planned_exercise_id: exerciseRow.id,
           user_id: userId,
           set_number: k + 1,
@@ -246,7 +286,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
 
   const { data: sessions } = await supabase
     .from("planned_sessions")
-    .select("id, label, sort_order, day_of_week, is_rest_day")
+    .select("id, label, sort_order, day_of_week, day_kind, rounds, rest_between_rounds_seconds")
     .eq("weekly_plan_id", currentPlan.id);
   if (!sessions || sessions.length === 0) return { ok: false, error: "Rien à copier." };
 
@@ -254,7 +294,9 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
   const { data: exerciseRows } = sessionIds.length
     ? await supabase
         .from("planned_exercises")
-        .select("planned_session_id, exercise_id, target_sets, target_performance, sort_order")
+        .select(
+          "planned_session_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order"
+        )
         .in("planned_session_id", sessionIds)
     : { data: [] };
 
@@ -274,7 +316,9 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
         label: s.label,
         sort_order: s.sort_order,
         day_of_week: s.day_of_week,
-        is_rest_day: s.is_rest_day,
+        day_kind: s.day_kind,
+        rounds: s.rounds,
+        rest_between_rounds_seconds: s.rest_between_rounds_seconds,
       })
       .select("id")
       .single();
@@ -290,13 +334,15 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
           exercise_id: ex.exercise_id,
           target_sets: ex.target_sets,
           target_performance: ex.target_performance,
+          rest_between_sets_seconds: ex.rest_between_sets_seconds,
+          rest_after_exercise_seconds: ex.rest_after_exercise_seconds,
           sort_order: ex.sort_order,
         })
         .select("id")
         .single();
       if (newExError || !newEx) return { ok: false, error: "Échec de la copie d'un exercice." };
 
-      const setRows = Array.from({ length: ex.target_sets }, (_, k) => ({
+      const setRows = Array.from({ length: ex.target_sets * s.rounds }, (_, k) => ({
         planned_exercise_id: newEx.id,
         user_id: userId,
         set_number: k + 1,
@@ -514,13 +560,13 @@ export async function markRestDayDone(plannedSessionId: string): Promise<Finaliz
 
   const { data: sessionRow } = await supabase
     .from("planned_sessions")
-    .select("id, is_rest_day")
+    .select("id, day_kind")
     .eq("id", plannedSessionId)
     .eq("user_id", userId)
     .maybeSingle();
 
   if (!sessionRow) return { ok: false, error: "Jour introuvable." };
-  if (!sessionRow.is_rest_day) return { ok: false, error: "Ce n'est pas un jour de repos." };
+  if (sessionRow.day_kind !== "rest") return { ok: false, error: "Ce n'est pas un jour de repos." };
 
   return finalizePlannedSessionInternal(supabase, plannedSessionId);
 }
@@ -532,7 +578,7 @@ async function finalizePlannedSessionInternal(
 ): Promise<FinalizeResult> {
   const { data: sessionRow, error: sessionError } = await supabase
     .from("planned_sessions")
-    .select("id, weekly_plan_id, user_id, is_rest_day, completed_at, full_completion")
+    .select("id, weekly_plan_id, user_id, day_kind, completed_at, full_completion")
     .eq("id", plannedSessionId)
     .maybeSingle();
 
@@ -541,7 +587,7 @@ async function finalizePlannedSessionInternal(
 
   const userId = sessionRow.user_id;
 
-  if (sessionRow.is_rest_day) {
+  if (sessionRow.day_kind === "rest") {
     await Promise.all([
       supabase
         .from("planned_sessions")

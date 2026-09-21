@@ -35,7 +35,7 @@ export default async function LogPage() {
     return (
       <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
         <h1 className="font-display text-xl font-bold">
-          {todaySession.isRestDay ? "Repos" : todaySession.label}
+          {todaySession.dayKind === "rest" ? "Repos" : todaySession.label}
         </h1>
         <SessionRunner session={todaySession} initialSummary={initialSummary} />
         <Link href="/log/libre" className="text-sm text-muted text-center underline underline-offset-2">
