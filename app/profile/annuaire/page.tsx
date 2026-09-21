@@ -18,7 +18,10 @@ export default async function AnnuairePage() {
     );
   }
 
-  const profiles = await getAllProfilesWithLevel();
+  // "test" is the internal debug account, not a real user — excluded here.
+  const profiles = (await getAllProfilesWithLevel()).filter(
+    (p) => p.username.toLowerCase() !== "test"
+  );
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
