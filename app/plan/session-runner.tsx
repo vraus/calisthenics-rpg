@@ -193,9 +193,9 @@ export default function SessionRunner({
         const remaining = exercise.sets.filter((s) => !s.doneAt).length;
         return (
           <div key={exercise.id} className="panel-rpg p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <p className="font-medium">{exercise.exerciseName}</p>
-              <span className="text-xs text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p className="min-w-0 font-medium">{exercise.exerciseName}</p>
+              <span className="shrink-0 whitespace-nowrap text-xs text-muted">
                 {exercise.targetPerformance}
                 {exercise.unlockType === "duration" ? " s" : " reps"} / série
               </span>

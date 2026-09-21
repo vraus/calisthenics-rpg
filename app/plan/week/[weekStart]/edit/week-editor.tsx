@@ -152,12 +152,12 @@ export default function WeekEditor({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {days.map((day) => (
         <div key={day.dayOfWeek} className="panel-rpg p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-medium">{DAY_LABELS[day.dayOfWeek]}</p>
             {day.locked ? (
               <span className="text-xs text-gold">Verrouillé ({day.lockedLabel})</span>
             ) : (
-              <div className="flex gap-1 text-xs">
+              <div className="flex flex-wrap gap-1 text-xs">
                 {(["unset", "rest", "session"] as const).map((k) => (
                   <button
                     key={k}
@@ -185,13 +185,13 @@ export default function WeekEditor({
                 placeholder="Nom de la séance"
               />
               {day.exercises.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex items-center gap-2">
+                <div key={rowIndex} className="flex flex-wrap items-center gap-2">
                   <select
                     value={row.exerciseId}
                     onChange={(e) =>
                       updateExerciseRow(day.dayOfWeek, rowIndex, { exerciseId: e.target.value })
                     }
-                    className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-foreground text-sm"
+                    className="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-surface px-3 py-2 text-foreground text-sm"
                   >
                     {familiesWithExercises.map(({ family, exercises }) => (
                       <optgroup key={family.id} label={family.name}>
@@ -210,14 +210,14 @@ export default function WeekEditor({
                     onChange={(e) =>
                       updateExerciseRow(day.dayOfWeek, rowIndex, { targetSets: Number(e.target.value) })
                     }
-                    className="w-16 rounded-lg border border-border bg-surface px-2 py-2 text-foreground text-sm"
+                    className="w-16 shrink-0 rounded-lg border border-border bg-surface px-2 py-2 text-foreground text-sm"
                   />
-                  <span className="text-xs text-muted">séries</span>
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted">séries</span>
                   {day.exercises.length > 1 ? (
                     <button
                       type="button"
                       onClick={() => removeExerciseRow(day.dayOfWeek, rowIndex)}
-                      className="text-xs text-bordeaux"
+                      className="shrink-0 text-xs text-bordeaux"
                     >
                       ✕
                     </button>

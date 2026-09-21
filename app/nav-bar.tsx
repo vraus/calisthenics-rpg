@@ -38,8 +38,8 @@ export default function NavBar() {
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-20 h-14 border-b border-border bg-surface/95 backdrop-blur flex items-center justify-between px-4">
-        <span className="font-display text-lg font-bold tracking-wide text-accent-strong">
+      <header className="fixed top-0 inset-x-0 z-20 h-14 border-b border-border bg-surface/95 backdrop-blur flex items-center justify-between gap-2 px-4">
+        <span className="min-w-0 truncate font-display text-lg font-bold tracking-wide text-accent-strong">
           Calisthenics RPG
         </span>
         <button
@@ -47,7 +47,7 @@ export default function NavBar() {
           aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-lg hover:bg-surface-alt transition-colors"
+          className="flex h-9 w-9 shrink-0 flex-col items-center justify-center gap-1.5 rounded-lg hover:bg-surface-alt transition-colors"
         >
           <span
             className={`block h-0.5 w-5 bg-foreground transition-transform ${
