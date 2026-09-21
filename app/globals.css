@@ -90,8 +90,38 @@ body {
   animation: level-up-pop 2.5s ease-out forwards;
 }
 
-/* Punchier than level-up-pop (bigger overshoot + a little wiggle) — for the
-   bigger moments: a day finished at 100%, a perfect week. */
+/* Punchier entrance than level-up-pop (bigger overshoot + a little wiggle),
+   for a panel that STAYS on screen — "day finished" summaries. Ends at
+   opacity 1 / scale 1 on purpose, unlike level-up-pop: this isn't an
+   auto-dismissing overlay, so the animation must not fade it back out. */
+@keyframes celebrate-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-3deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.15) rotate(2deg);
+  }
+  35% {
+    transform: scale(0.97) rotate(-1deg);
+  }
+  50% {
+    transform: scale(1.03) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-celebrate-in {
+  animation: celebrate-in 0.9s ease-out forwards;
+}
+
+/* Same entrance, but fades back out at the end — for overlays that
+   auto-unmount via JS after a timer (see usePerfectWeek), timed to roughly
+   match that timer so it doesn't just vanish. */
 @keyframes celebrate {
   0% {
     opacity: 0;
