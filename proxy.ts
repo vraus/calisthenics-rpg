@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { REMEMBER_COOKIE_NAME, withRememberMaxAge } from "@/lib/supabase/remember";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/auth/reset-password"];
 
 /**
  * Refreshes the Supabase session cookie on every navigation (per the
@@ -10,6 +11,7 @@ const PUBLIC_PATHS = ["/login", "/auth/callback"];
  */
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request });
+  const remember = request.cookies.get(REMEMBER_COOKIE_NAME)?.value === "1";
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +26,7 @@ export async function proxy(request: NextRequest) {
             request.cookies.set(name, value);
           }
           for (const { name, value, options } of cookiesToSet) {
-            response.cookies.set(name, value, options);
+            response.cookies.set(name, value, withRememberMaxAge(options, remember));
           }
         },
       },

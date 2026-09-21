@@ -1,35 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useTransition } from "react";
+import { login, requestPasswordReset } from "./actions";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
-    "idle"
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [loginError, setLoginError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent) {
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetStatus, setResetStatus] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("sending");
-    setErrorMessage(null);
+    setLoginError(null);
+    const formData = new FormData(event.currentTarget);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+    startTransition(async () => {
+      const result = await login(formData);
+      if (result?.error) {
+        setLoginError(result.error);
+      }
     });
+  }
 
-    if (error) {
-      setStatus("error");
-      setErrorMessage(error.message);
-      return;
-    }
+  function handleResetSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setResetStatus("sending");
+    setResetError(null);
 
-    setStatus("sent");
+    const formData = new FormData();
+    formData.set("email", resetEmail);
+
+    startTransition(async () => {
+      const result = await requestPasswordReset(formData);
+      if (result.error) {
+        setResetStatus("error");
+        setResetError(result.error);
+        return;
+      }
+      setResetStatus("sent");
+    });
   }
 
   return (
@@ -38,36 +52,91 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold text-foreground mb-1">
           Calisthenics RPG
         </h1>
-        <p className="text-sm text-muted mb-8">
-          Connexion par lien magique, aucun mot de passe.
-        </p>
+        <p className="text-sm text-muted mb-8">Connecte-toi pour continuer.</p>
 
-        {status === "sent" ? (
-          <p className="rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
-            Lien envoyé à {email}. Ouvre-le depuis ce même appareil pour te
-            connecter.
-          </p>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="email"
-              required
-              placeholder="ton@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-            />
+        {!showReset ? (
+          <>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="ton@email.com"
+                autoComplete="email"
+                className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+              <input
+                type="password"
+                name="password"
+                required
+                placeholder="Mot de passe"
+                autoComplete="current-password"
+                className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+              <label className="flex items-center gap-2 text-sm text-muted">
+                <input type="checkbox" name="remember" className="h-4 w-4" />
+                Rester connecté sur cet appareil pendant 30 jours
+              </label>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
+              >
+                {isPending ? "Connexion..." : "Se connecter"}
+              </button>
+              {loginError ? (
+                <p className="text-sm text-bordeaux">{loginError}</p>
+              ) : null}
+            </form>
             <button
-              type="submit"
-              disabled={status === "sending"}
-              className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
+              type="button"
+              onClick={() => setShowReset(true)}
+              className="mt-4 text-sm text-muted underline underline-offset-2 hover:text-accent-strong"
             >
-              {status === "sending" ? "Envoi..." : "Recevoir le lien"}
+              Mot de passe oublié ?
             </button>
-            {status === "error" && errorMessage ? (
-              <p className="text-sm text-bordeaux">{errorMessage}</p>
-            ) : null}
-          </form>
+          </>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {resetStatus === "sent" ? (
+              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
+                Si un compte existe pour {resetEmail}, un email vient d&apos;être
+                envoyé avec un lien pour définir ton mot de passe.
+              </p>
+            ) : (
+              <form onSubmit={handleResetSubmit} className="flex flex-col gap-4">
+                <input
+                  type="email"
+                  required
+                  placeholder="ton@email.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+                <button
+                  type="submit"
+                  disabled={resetStatus === "sending"}
+                  className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
+                >
+                  {resetStatus === "sending" ? "Envoi..." : "Recevoir le lien"}
+                </button>
+                {resetStatus === "error" && resetError ? (
+                  <p className="text-sm text-bordeaux">{resetError}</p>
+                ) : null}
+              </form>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowReset(false);
+                setResetStatus("idle");
+                setResetError(null);
+              }}
+              className="text-sm text-muted underline underline-offset-2 hover:text-accent-strong"
+            >
+              Retour à la connexion
+            </button>
+          </div>
         )}
       </div>
     </main>

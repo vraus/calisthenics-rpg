@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "./logout/actions";
 
 const LINKS = [
   { href: "/dashboard", label: "Niveau" },
@@ -33,6 +34,16 @@ export default function NavBar() {
             </Link>
           </li>
         ))}
+        <li className="flex-1">
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex w-full flex-col items-center gap-1 py-3 text-xs font-medium text-muted hover:text-accent-strong transition-colors"
+            >
+              Déconnexion
+            </button>
+          </form>
+        </li>
       </ul>
     </nav>
   );
