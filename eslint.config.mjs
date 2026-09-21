@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone project with its own package.json/tooling, not part of the Next.js app.
+    "mcp-server/**",
   ]),
 ]);
 
