@@ -195,7 +195,7 @@ export async function logExercisePerformance(
   revalidatePath("/dashboard");
   revalidatePath("/tree");
   revalidatePath("/history");
-  revalidatePath("/stats");
+  revalidatePath("/profile");
   revalidatePath("/plan");
 
   return {

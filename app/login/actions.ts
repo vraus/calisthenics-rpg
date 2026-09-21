@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/data";
 import {
   REMEMBER_COOKIE_NAME,
   REMEMBER_MAX_AGE,
@@ -57,10 +58,14 @@ export async function login(formData: FormData): Promise<LoginResult> {
     }
   );
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return { error: "Email ou mot de passe incorrect." };
+  }
+
+  if (data.user) {
+    await ensureProfile(supabase, data.user.id, data.user.email);
   }
 
   if (remember) {
@@ -134,7 +139,8 @@ export async function signup(formData: FormData): Promise<SignupResult> {
     return { error: "Impossible de créer ce compte pour le moment." };
   }
 
-  if (data.session) {
+  if (data.session && data.user) {
+    await ensureProfile(supabase, data.user.id, data.user.email);
     redirect("/dashboard");
   }
 

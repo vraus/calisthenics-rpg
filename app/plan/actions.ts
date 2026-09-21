@@ -561,7 +561,7 @@ async function finalizePlannedSessionInternal(
     revalidatePath("/plan");
     revalidatePath("/log");
     revalidatePath("/dashboard");
-    revalidatePath("/stats");
+    revalidatePath("/profile");
 
     return { ok: true, fullCompletion: true, bonusXp: REST_DAY_BONUS, perfectWeekBonusXp };
   }
@@ -617,7 +617,7 @@ async function finalizePlannedSessionInternal(
   revalidatePath("/plan");
   revalidatePath("/log");
   revalidatePath("/dashboard");
-  revalidatePath("/stats");
+  revalidatePath("/profile");
 
   return { ok: true, fullCompletion, bonusXp, perfectWeekBonusXp };
 }

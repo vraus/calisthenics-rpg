@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildMasteredByFamily,
   computeSessionXp,
   familyLevel,
   globalLevel,
@@ -8,7 +9,7 @@ import {
   meetsUnlockThreshold,
   xpThresholdForLevel,
 } from "./xp";
-import type { Exercise } from "./types";
+import type { Exercise, ExerciseFamily } from "./types";
 
 const repsExercise: Exercise = {
   id: "ex-1",
@@ -152,5 +153,40 @@ describe("familyLevel / globalLevel", () => {
 
   it("returns level 1 for no progress", () => {
     expect(familyLevel([]).level).toBe(1);
+  });
+});
+
+describe("buildMasteredByFamily", () => {
+  const family: ExerciseFamily = {
+    id: "fam-1",
+    slug: "tractions",
+    name: "Tractions",
+    statTag: "force-tirage",
+    sortOrder: 1,
+  };
+
+  it("counts mastered exercises per family and lists their names", () => {
+    const result = buildMasteredByFamily(
+      [{ family, exercises: [repsExercise, durationExercise] }],
+      [
+        { exerciseId: repsExercise.id, mastered: true },
+        { exerciseId: durationExercise.id, mastered: false },
+      ]
+    );
+    expect(result).toEqual([
+      {
+        familyName: "Tractions",
+        masteredCount: 1,
+        totalCount: 2,
+        masteredNames: ["Traction stricte"],
+      },
+    ]);
+  });
+
+  it("handles a family with nothing mastered", () => {
+    const result = buildMasteredByFamily([{ family, exercises: [repsExercise] }], []);
+    expect(result).toEqual([
+      { familyName: "Tractions", masteredCount: 0, totalCount: 1, masteredNames: [] },
+    ]);
   });
 });

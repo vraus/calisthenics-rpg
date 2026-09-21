@@ -1,4 +1,4 @@
-import type { Exercise, SessionInput, UserProgress } from "./types";
+import type { Exercise, ExerciseFamily, SessionInput, UserProgress } from "./types";
 
 /**
  * Core XP engine. No UI or Supabase dependency on purpose: this module is
@@ -133,6 +133,34 @@ export function familyLevel(
 export function globalLevel(allProgress: Pick<UserProgress, "xpInExercise">[]): LevelInfo {
   const total = allProgress.reduce((sum, p) => sum + p.xpInExercise, 0);
   return levelFromXp(total);
+}
+
+export interface MasteredFamilySummary {
+  familyName: string;
+  masteredCount: number;
+  totalCount: number;
+  masteredNames: string[];
+}
+
+/**
+ * Groups mastered exercises by family, for the profile page (own and
+ * others' — the "quels exos ils maîtrisent" view).
+ */
+export function buildMasteredByFamily(
+  familiesWithExercises: { family: ExerciseFamily; exercises: Exercise[] }[],
+  progress: Pick<UserProgress, "exerciseId" | "mastered">[]
+): MasteredFamilySummary[] {
+  const masteredIds = new Set(progress.filter((p) => p.mastered).map((p) => p.exerciseId));
+
+  return familiesWithExercises.map(({ family, exercises }) => {
+    const mastered = exercises.filter((e) => masteredIds.has(e.id));
+    return {
+      familyName: family.name,
+      masteredCount: mastered.length,
+      totalCount: exercises.length,
+      masteredNames: mastered.map((e) => e.name),
+    };
+  });
 }
 
 function round2(value: number): number {

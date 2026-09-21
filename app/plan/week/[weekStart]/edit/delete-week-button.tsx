@@ -37,7 +37,6 @@ export default function DeleteWeekButton({ weekStart }: { weekStart: string }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-3 text-xs">
-        <span className="text-bordeaux">Supprimer toute la semaine ?</span>
         <button
           type="button"
           onClick={handleDelete}

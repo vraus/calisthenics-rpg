@@ -11,7 +11,7 @@ const LINKS = [
   { href: "/log", label: "Séance" },
   { href: "/tree", label: "Compétences" },
   { href: "/history", label: "Historique" },
-  { href: "/stats", label: "Profil" },
+  { href: "/profile", label: "Profil" },
 ] as const;
 
 const HIDDEN_ON = ["/login", "/auth"];

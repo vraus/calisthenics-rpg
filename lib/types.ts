@@ -89,3 +89,12 @@ export function isDayLocked(session: PlannedSession): boolean {
   if (session.isRestDay) return Boolean(session.completedAt);
   return session.exercises.some((ex) => ex.sets.some((s) => s.doneAt));
 }
+
+export interface Profile {
+  userId: string;
+  username: string;
+}
+
+export interface ProfileSummary extends Profile {
+  level: number;
+}

@@ -7,10 +7,13 @@ import type {
   PlannedExercise,
   PlannedSession,
   PlannedSet,
+  Profile,
+  ProfileSummary,
   UnlockType,
   UserProgress,
   WeeklyPlan,
 } from "@/lib/types";
+import { levelFromXp } from "@/lib/xp";
 
 /**
  * Data-access layer: every read here is scoped to the authenticated user via
@@ -361,6 +364,90 @@ export async function getPlannedSessionXpSummary(
   const bonusXp = (bonusRows ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
 
   return { xpEarned, bonusXp };
+}
+
+const DEFAULT_USERNAME_BASE = "aventurier";
+
+/**
+ * Creates a profiles row with a default username if this user doesn't have
+ * one yet — no-op otherwise. Takes an already-authenticated client (same
+ * pattern as logExercisePerformance) rather than constructing its own, so
+ * it can run mid-login before the new session cookie is fully settled.
+ */
+export async function ensureProfile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  email: string | null | undefined
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing) return;
+
+  const base =
+    (email?.split("@")[0] ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "")
+      .slice(0, 16) || DEFAULT_USERNAME_BASE;
+
+  for (let suffix = 0; suffix <= 20; suffix++) {
+    const username = suffix === 0 ? base : `${base}${suffix}`;
+    const { error } = await supabase.from("profiles").insert({ user_id: userId, username });
+    if (!error) return;
+    if (error.code !== "23505") return; // unexpected error: non-critical path, don't block login
+  }
+}
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id, username")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw new Error(`getProfile: ${error.message}`);
+  return data ? { userId: data.user_id, username: data.username } : null;
+}
+
+export async function getProfileByUsername(username: string): Promise<Profile | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id, username")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (error) throw new Error(`getProfileByUsername: ${error.message}`);
+  return data ? { userId: data.user_id, username: data.username } : null;
+}
+
+/** Every profile with its global level (own progress XP + bonus XP), for the directory. */
+export async function getAllProfilesWithLevel(): Promise<ProfileSummary[]> {
+  const supabase = await createClient();
+  const [{ data: profileRows }, { data: progressRows }, { data: bonusRows }] = await Promise.all([
+    supabase.from("profiles").select("user_id, username"),
+    supabase.from("user_progress").select("user_id, xp_in_exercise"),
+    supabase.from("xp_bonuses").select("user_id, amount"),
+  ]);
+
+  const xpByUser = new Map<string, number>();
+  for (const p of progressRows ?? []) {
+    xpByUser.set(p.user_id, (xpByUser.get(p.user_id) ?? 0) + Number(p.xp_in_exercise));
+  }
+  for (const b of bonusRows ?? []) {
+    xpByUser.set(b.user_id, (xpByUser.get(b.user_id) ?? 0) + Number(b.amount));
+  }
+
+  return (profileRows ?? [])
+    .map((p) => ({
+      userId: p.user_id,
+      username: p.username,
+      level: levelFromXp(xpByUser.get(p.user_id) ?? 0).level,
+    }))
+    .sort((a, b) => b.level - a.level);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
