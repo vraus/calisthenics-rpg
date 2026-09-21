@@ -134,6 +134,36 @@ export async function getRecentSessions(userId: string, limit = 20) {
   return data ?? [];
 }
 
+/** Total session count — cheap head-count query, no row data fetched. */
+export async function getSessionCount(userId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) throw new Error(`getSessionCount: ${error.message}`);
+  return count ?? 0;
+}
+
+/**
+ * Just enough recent session dates to compute a streak (badge thresholds
+ * only go up to 30 days) — no join, unlike getRecentSessions, since only
+ * `performed_at` is needed here.
+ */
+export async function getSessionDatesForStreak(userId: string, limit = 90): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("performed_at")
+    .eq("user_id", userId)
+    .order("performed_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`getSessionDatesForStreak: ${error.message}`);
+  return (data ?? []).map((r) => r.performed_at);
+}
+
 export async function getXpBonusTotal(userId: string): Promise<number> {
   const supabase = await createClient();
   const { data, error } = await supabase

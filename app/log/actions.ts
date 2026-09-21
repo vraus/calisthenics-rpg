@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { getAllExercises, getFamilies, getRecentSessions, getRestDayCompletionDates } from "@/lib/data";
+import {
+  getAllExercises,
+  getFamilies,
+  getRestDayCompletionDates,
+  getSessionCount,
+  getSessionDatesForStreak,
+} from "@/lib/data";
 import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import { evaluateNewBadges, type BadgeContext } from "@/lib/badges";
@@ -33,10 +39,11 @@ async function awardNewBadges(
   progress: UserProgress[]
 ): Promise<string[]> {
   try {
-    const [families, exercises, sessions, restDayDates, earnedRows] = await Promise.all([
+    const [families, exercises, sessionCount, sessionDates, restDayDates, earnedRows] = await Promise.all([
       getFamilies(),
       getAllExercises(),
-      getRecentSessions(userId, 1000),
+      getSessionCount(userId),
+      getSessionDatesForStreak(userId),
       getRestDayCompletionDates(userId),
       supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
     ]);
@@ -70,8 +77,8 @@ async function awardNewBadges(
     );
 
     const ctx: BadgeContext = {
-      sessionCount: sessions.length,
-      currentStreak: computeStreak([...sessions.map((s) => s.performed_at), ...restDayDates]).current,
+      sessionCount,
+      currentStreak: computeStreak([...sessionDates, ...restDayDates]).current,
       globalLevel: globalLevel(progress).level,
       masteredExerciseSlugs,
       masteredSlugsByFamily,
@@ -128,32 +135,35 @@ export async function logExercisePerformance(
 
   const justMastered = meetsUnlockThreshold(session, exercise);
 
-  const { data: progressBefore } = await supabase
-    .from("user_progress")
-    .select("user_id, exercise_id, xp_in_exercise, mastered, mastered_at")
-    .eq("user_id", userId);
+  // Independent of each other: the insert doesn't need the prior progress
+  // read, so they run concurrently instead of one after the other.
+  const [{ data: progressBefore }, { data: sessionRow, error: insertError }] = await Promise.all([
+    supabase
+      .from("user_progress")
+      .select("user_id, exercise_id, xp_in_exercise, mastered, mastered_at")
+      .eq("user_id", userId),
+    supabase
+      .from("sessions")
+      .insert({
+        user_id: userId,
+        exercise_id: exercise.id,
+        sets: session.sets,
+        reps_per_set: session.repsPerSet ?? null,
+        duration_seconds: session.durationSeconds ?? null,
+        xp_earned: xpEarned,
+      })
+      .select("id")
+      .single(),
+  ]);
+
+  if (insertError || !sessionRow) {
+    return { ok: false, error: "Échec de l'enregistrement de la séance." };
+  }
 
   const beforeLevel = globalLevel(
     (progressBefore ?? []).map((p) => ({ xpInExercise: Number(p.xp_in_exercise) }))
   ).level;
   const existingProgress = (progressBefore ?? []).find((p) => p.exercise_id === exercise.id);
-
-  const { data: sessionRow, error: insertError } = await supabase
-    .from("sessions")
-    .insert({
-      user_id: userId,
-      exercise_id: exercise.id,
-      sets: session.sets,
-      reps_per_set: session.repsPerSet ?? null,
-      duration_seconds: session.durationSeconds ?? null,
-      xp_earned: xpEarned,
-    })
-    .select("id")
-    .single();
-
-  if (insertError || !sessionRow) {
-    return { ok: false, error: "Échec de l'enregistrement de la séance." };
-  }
 
   const newXp = (existingProgress ? Number(existingProgress.xp_in_exercise) : 0) + xpEarned;
   const newMastered = existingProgress?.mastered || justMastered;

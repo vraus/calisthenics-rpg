@@ -310,49 +310,32 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
   return { ok: true };
 }
 
-async function loadExerciseForPerformance(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  exerciseId: string
-): Promise<Exercise | null> {
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("id, family_id, slug, name, tier, unlock_type, unlock_threshold, xp_coefficient")
-    .eq("id", exerciseId)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  return {
-    id: data.id,
-    familyId: data.family_id,
-    slug: data.slug,
-    name: data.name,
-    tier: data.tier,
-    unlockType: data.unlock_type,
-    unlockThreshold: data.unlock_threshold,
-    xpCoefficient: Number(data.xp_coefficient),
-  };
+interface SessionSetsInfo {
+  fullyDone: boolean;
+  /** Distinct `sessions` rows behind this planned session's sets, for XP aggregation. */
+  sessionIds: string[];
 }
 
-/** True once every planned_set under this planned_session has done_at set. */
-async function isSessionFullyDone(
+/**
+ * Single query (via the planned_exercises FK join) covering both the
+ * "is every set done" check and the session ids needed for the completion
+ * XP bonus — replaces what used to be up to 4 separate round trips across
+ * isSessionFullyDone + the finalize block's own exercise/set lookups.
+ */
+async function loadSessionSetsInfo(
   supabase: Awaited<ReturnType<typeof createClient>>,
   plannedSessionId: string
-): Promise<boolean> {
-  const { data: exerciseRows } = await supabase
-    .from("planned_exercises")
-    .select("id")
-    .eq("planned_session_id", plannedSessionId);
-
-  const exerciseIds = (exerciseRows ?? []).map((e) => e.id);
-  if (exerciseIds.length === 0) return false;
-
-  const { data: setRows } = await supabase
+): Promise<SessionSetsInfo> {
+  const { data: rows } = await supabase
     .from("planned_sets")
-    .select("done_at")
-    .in("planned_exercise_id", exerciseIds);
+    .select("done_at, session_id, planned_exercises!inner(planned_session_id)")
+    .eq("planned_exercises.planned_session_id", plannedSessionId);
 
-  return (setRows ?? []).length > 0 && (setRows ?? []).every((s) => s.done_at !== null);
+  const all = rows ?? [];
+  return {
+    fullyDone: all.length > 0 && all.every((r) => r.done_at !== null),
+    sessionIds: [...new Set(all.map((r) => r.session_id).filter((id): id is string => Boolean(id)))],
+  };
 }
 
 export interface ValidateSetResult extends LogSessionResult {
@@ -369,7 +352,13 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
 
   const { data: setRow, error: setError } = await supabase
     .from("planned_sets")
-    .select("id, planned_exercise_id, done_at")
+    .select(
+      `id, done_at,
+       planned_exercises (
+         id, planned_session_id, target_performance,
+         exercises (id, family_id, slug, name, tier, unlock_type, unlock_threshold, xp_coefficient)
+       )`
+    )
     .eq("id", plannedSetId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -377,16 +366,21 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
   if (setError || !setRow) return { ok: false, error: "Série introuvable." };
   if (setRow.done_at) return { ok: false, error: "Série déjà validée." };
 
-  const { data: plannedExercise, error: plannedExError } = await supabase
-    .from("planned_exercises")
-    .select("id, planned_session_id, exercise_id, target_performance")
-    .eq("id", setRow.planned_exercise_id)
-    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const plannedExercise = setRow.planned_exercises as any;
+  const exerciseRow = plannedExercise?.exercises;
+  if (!plannedExercise || !exerciseRow) return { ok: false, error: "Exercice planifié introuvable." };
 
-  if (plannedExError || !plannedExercise) return { ok: false, error: "Exercice planifié introuvable." };
-
-  const exercise = await loadExerciseForPerformance(supabase, plannedExercise.exercise_id);
-  if (!exercise) return { ok: false, error: "Exercice introuvable." };
+  const exercise: Exercise = {
+    id: exerciseRow.id,
+    familyId: exerciseRow.family_id,
+    slug: exerciseRow.slug,
+    name: exerciseRow.name,
+    tier: exerciseRow.tier,
+    unlockType: exerciseRow.unlock_type,
+    unlockThreshold: exerciseRow.unlock_threshold,
+    xpCoefficient: Number(exerciseRow.xp_coefficient),
+  };
 
   const performance =
     exercise.unlockType === "reps"
@@ -411,28 +405,44 @@ export async function validateRemainingSets(plannedExerciseId: string): Promise<
   const userId = await getAuthenticatedUserId();
   if (!userId) return { ok: false, error: "Non connecté." };
 
-  const { data: plannedExercise, error: plannedExError } = await supabase
-    .from("planned_exercises")
-    .select("id, planned_session_id, exercise_id, target_performance")
-    .eq("id", plannedExerciseId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  const [{ data: plannedExercise, error: plannedExError }, { data: remainingSets, error: remainingError }] =
+    await Promise.all([
+      supabase
+        .from("planned_exercises")
+        .select(
+          `id, planned_session_id, target_performance,
+           exercises (id, family_id, slug, name, tier, unlock_type, unlock_threshold, xp_coefficient)`
+        )
+        .eq("id", plannedExerciseId)
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabase
+        .from("planned_sets")
+        .select("id")
+        .eq("planned_exercise_id", plannedExerciseId)
+        .is("done_at", null),
+    ]);
 
   if (plannedExError || !plannedExercise) return { ok: false, error: "Exercice planifié introuvable." };
-
-  const { data: remainingSets, error: remainingError } = await supabase
-    .from("planned_sets")
-    .select("id")
-    .eq("planned_exercise_id", plannedExerciseId)
-    .is("done_at", null);
-
   if (remainingError) return { ok: false, error: "Échec de la lecture des séries." };
   if (!remainingSets || remainingSets.length === 0) {
     return { ok: false, error: "Aucune série restante." };
   }
 
-  const exercise = await loadExerciseForPerformance(supabase, plannedExercise.exercise_id);
-  if (!exercise) return { ok: false, error: "Exercice introuvable." };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const exerciseRow = (plannedExercise as any).exercises;
+  if (!exerciseRow) return { ok: false, error: "Exercice introuvable." };
+
+  const exercise: Exercise = {
+    id: exerciseRow.id,
+    familyId: exerciseRow.family_id,
+    slug: exerciseRow.slug,
+    name: exerciseRow.name,
+    tier: exerciseRow.tier,
+    unlockType: exerciseRow.unlock_type,
+    unlockThreshold: exerciseRow.unlock_threshold,
+    xpCoefficient: Number(exerciseRow.xp_coefficient),
+  };
 
   const performance =
     exercise.unlockType === "reps"
@@ -462,10 +472,11 @@ async function maybeFinalizeAfterSet(
   plannedSessionId: string,
   result: LogSessionResult
 ): Promise<ValidateSetResult> {
-  if (!(await isSessionFullyDone(supabase, plannedSessionId))) {
+  const info = await loadSessionSetsInfo(supabase, plannedSessionId);
+  if (!info.fullyDone) {
     return result;
   }
-  const finalized = await finalizePlannedSessionInternal(supabase, plannedSessionId);
+  const finalized = await finalizePlannedSessionInternal(supabase, plannedSessionId, info);
   return { ...result, ...finalized, sessionFinalized: true };
 }
 
@@ -516,7 +527,8 @@ export async function markRestDayDone(plannedSessionId: string): Promise<Finaliz
 
 async function finalizePlannedSessionInternal(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  plannedSessionId: string
+  plannedSessionId: string,
+  precomputed?: SessionSetsInfo
 ): Promise<FinalizeResult> {
   const { data: sessionRow, error: sessionError } = await supabase
     .from("planned_sessions")
@@ -530,18 +542,19 @@ async function finalizePlannedSessionInternal(
   const userId = sessionRow.user_id;
 
   if (sessionRow.is_rest_day) {
-    await supabase
-      .from("planned_sessions")
-      .update({ completed_at: new Date().toISOString(), full_completion: true })
-      .eq("id", plannedSessionId);
-
-    await supabase.from("xp_bonuses").insert({
-      user_id: userId,
-      amount: REST_DAY_BONUS,
-      source: "rest_day",
-      planned_session_id: plannedSessionId,
-      weekly_plan_id: sessionRow.weekly_plan_id,
-    });
+    await Promise.all([
+      supabase
+        .from("planned_sessions")
+        .update({ completed_at: new Date().toISOString(), full_completion: true })
+        .eq("id", plannedSessionId),
+      supabase.from("xp_bonuses").insert({
+        user_id: userId,
+        amount: REST_DAY_BONUS,
+        source: "rest_day",
+        planned_session_id: plannedSessionId,
+        weekly_plan_id: sessionRow.weekly_plan_id,
+      }),
+    ]);
 
     const perfectWeekBonusXp = await maybeAwardPerfectWeek(supabase, userId, sessionRow.weekly_plan_id);
 
@@ -553,38 +566,24 @@ async function finalizePlannedSessionInternal(
     return { ok: true, fullCompletion: true, bonusXp: REST_DAY_BONUS, perfectWeekBonusXp };
   }
 
-  const fullCompletion = await isSessionFullyDone(supabase, plannedSessionId);
+  const info = precomputed ?? (await loadSessionSetsInfo(supabase, plannedSessionId));
+  const fullCompletion = info.fullyDone;
 
-  await supabase
-    .from("planned_sessions")
-    .update({ completed_at: new Date().toISOString(), full_completion: fullCompletion })
-    .eq("id", plannedSessionId);
+  const [, xpRowsResult] = await Promise.all([
+    supabase
+      .from("planned_sessions")
+      .update({ completed_at: new Date().toISOString(), full_completion: fullCompletion })
+      .eq("id", plannedSessionId),
+    fullCompletion && info.sessionIds.length
+      ? supabase.from("sessions").select("xp_earned").in("id", info.sessionIds)
+      : Promise.resolve({ data: [] as { xp_earned: number }[] }),
+  ]);
 
   let bonusXp: number | undefined;
   let perfectWeekBonusXp: number | undefined;
 
   if (fullCompletion) {
-    const { data: exerciseRows } = await supabase
-      .from("planned_exercises")
-      .select("id")
-      .eq("planned_session_id", plannedSessionId);
-    const exerciseIds = (exerciseRows ?? []).map((e) => e.id);
-
-    const { data: setRows } = exerciseIds.length
-      ? await supabase
-          .from("planned_sets")
-          .select("session_id")
-          .in("planned_exercise_id", exerciseIds)
-      : { data: [] };
-
-    const sessionIds = [
-      ...new Set((setRows ?? []).map((s) => s.session_id).filter((id): id is string => Boolean(id))),
-    ];
-
-    const { data: xpRows } = sessionIds.length
-      ? await supabase.from("sessions").select("xp_earned").in("id", sessionIds)
-      : { data: [] };
-
+    const { data: xpRows } = xpRowsResult;
     const totalXp = (xpRows ?? []).reduce((sum, r) => sum + Number(r.xp_earned), 0);
     bonusXp = Math.round(totalXp * SESSION_COMPLETE_BONUS_RATE);
 
