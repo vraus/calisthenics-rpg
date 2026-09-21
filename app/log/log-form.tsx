@@ -86,8 +86,11 @@ export default function LogForm({ groups }: { groups: Group[] }) {
           <input
             type="number"
             min={1}
-            value={sets}
-            onChange={(e) => setSets(Number(e.target.value))}
+            value={sets === 0 ? "" : sets}
+            onChange={(e) => {
+              const raw = e.target.value;
+              setSets(raw === "" ? 0 : Number(raw));
+            }}
             className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground"
           />
         </label>
@@ -101,8 +104,11 @@ export default function LogForm({ groups }: { groups: Group[] }) {
           <input
             type="number"
             min={1}
-            value={performance}
-            onChange={(e) => setPerformance(Number(e.target.value))}
+            value={performance === 0 ? "" : performance}
+            onChange={(e) => {
+              const raw = e.target.value;
+              setPerformance(raw === "" ? 0 : Number(raw));
+            }}
             className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground"
           />
           {selected ? (

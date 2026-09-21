@@ -181,6 +181,9 @@ export default function WeekEditor({
               <input
                 value={day.label}
                 onChange={(e) => updateDay(day.dayOfWeek, { label: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
                 className="rounded-lg border border-border bg-surface px-3 py-2 text-foreground font-medium text-sm"
                 placeholder="Nom de la séance"
               />
@@ -206,10 +209,22 @@ export default function WeekEditor({
                   <input
                     type="number"
                     min={1}
-                    value={row.targetSets}
-                    onChange={(e) =>
-                      updateExerciseRow(day.dayOfWeek, rowIndex, { targetSets: Number(e.target.value) })
-                    }
+                    // Empty string while editing (not 0): a controlled
+                    // number input showing "0" can't be backspaced down to
+                    // nothing on mobile keyboards, since a blank field
+                    // instantly re-renders as "0" again.
+                    value={row.targetSets === 0 ? "" : row.targetSets}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      updateExerciseRow(day.dayOfWeek, rowIndex, {
+                        targetSets: raw === "" ? 0 : Number(raw),
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      // Mobile numeric keyboards' "Go"/"Next" key otherwise
+                      // submits the whole week form from inside one row.
+                      if (e.key === "Enter") e.preventDefault();
+                    }}
                     className="w-16 shrink-0 rounded-lg border border-border bg-surface px-2 py-2 text-foreground text-sm"
                   />
                   <span className="shrink-0 whitespace-nowrap text-xs text-muted">séries</span>
