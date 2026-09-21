@@ -3,21 +3,36 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PlannedSession } from "@/lib/types";
-import { validateSet, validateRemainingSets, finalizePlannedSession, markRestDayDone } from "../actions";
-import { useLevelUp, LevelUpOverlay, BadgeChips } from "../../xp-feedback";
+import { validateSet, validateRemainingSets, finalizePlannedSession, markRestDayDone } from "./actions";
+import { useLevelUp, LevelUpOverlay, BadgeChips } from "../xp-feedback";
 
-export default function SessionRunner({ session }: { session: PlannedSession }) {
+interface InitialSummary {
+  xpEarned: number;
+  bonusXp?: number;
+}
+
+export default function SessionRunner({
+  session,
+  initialSummary,
+}: {
+  session: PlannedSession;
+  initialSummary?: InitialSummary;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [xpTotal, setXpTotal] = useState(0);
+  const [xpTotal, setXpTotal] = useState(initialSummary?.xpEarned ?? 0);
   const [badges, setBadges] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [finalized, setFinalized] = useState<{
     fullCompletion?: boolean;
     bonusXp?: number;
     perfectWeekBonusXp?: number;
-  } | null>(session.completedAt ? { fullCompletion: session.fullCompletion } : null);
+  } | null>(
+    session.completedAt
+      ? { fullCompletion: session.fullCompletion, bonusXp: initialSummary?.bonusXp }
+      : null
+  );
   const { level: levelUp, trigger: triggerLevelUp } = useLevelUp();
 
   function handleSet(plannedSetId: string) {

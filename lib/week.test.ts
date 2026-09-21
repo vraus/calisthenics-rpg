@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addWeeks, getWeekStart } from "./week";
+import { addWeeks, getTodayDayOfWeek, getWeekStart } from "./week";
 
 describe("getWeekStart", () => {
   it("returns the same date when given a Monday", () => {
@@ -31,5 +31,19 @@ describe("addWeeks", () => {
 
   it("supports negative offsets", () => {
     expect(addWeeks("2026-03-09", -1)).toBe("2026-03-02");
+  });
+});
+
+describe("getTodayDayOfWeek", () => {
+  it("maps Monday to 0", () => {
+    expect(getTodayDayOfWeek(new Date("2026-03-09T10:00:00Z"))).toBe(0);
+  });
+
+  it("maps Sunday to 6", () => {
+    expect(getTodayDayOfWeek(new Date("2026-03-15T10:00:00Z"))).toBe(6);
+  });
+
+  it("maps Wednesday to 2", () => {
+    expect(getTodayDayOfWeek(new Date("2026-03-11T10:00:00Z"))).toBe(2);
   });
 });

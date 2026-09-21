@@ -81,7 +81,10 @@ function WeekTile({
                     {s.isRestDay ? "Repos" : s.label} ✓
                   </span>
                 ) : (
-                  <Link href={`/plan/${s.id}`} className="text-accent-strong">
+                  // Always /log, never this specific day: only today's plan
+                  // can be executed (see app/log/page.tsx), so there's no
+                  // per-day detail route to link to anymore.
+                  <Link href="/log" className="text-accent-strong">
                     {s.isRestDay ? "Repos" : s.label}
                   </Link>
                 )}

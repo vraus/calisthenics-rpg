@@ -408,7 +408,7 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
     .update({ done_at: new Date().toISOString(), session_id: result.sessionId })
     .eq("id", plannedSetId);
 
-  revalidatePath(`/plan/${plannedExercise.planned_session_id}`);
+  revalidatePath("/log");
   return await maybeFinalizeAfterSet(supabase, plannedExercise.planned_session_id, result);
 }
 
@@ -462,7 +462,7 @@ export async function validateRemainingSets(plannedExerciseId: string): Promise<
     .update({ done_at: new Date().toISOString(), session_id: result.sessionId })
     .in("id", remainingSets.map((s) => s.id));
 
-  revalidatePath(`/plan/${plannedExercise.planned_session_id}`);
+  revalidatePath("/log");
   return await maybeFinalizeAfterSet(supabase, plannedExercise.planned_session_id, result);
 }
 
@@ -559,7 +559,7 @@ async function finalizePlannedSessionInternal(
     const perfectWeekBonusXp = await maybeAwardPerfectWeek(supabase, userId, sessionRow.weekly_plan_id);
 
     revalidatePath("/plan");
-    revalidatePath(`/plan/${plannedSessionId}`);
+    revalidatePath("/log");
     revalidatePath("/dashboard");
     revalidatePath("/stats");
 
@@ -615,7 +615,7 @@ async function finalizePlannedSessionInternal(
   }
 
   revalidatePath("/plan");
-  revalidatePath(`/plan/${plannedSessionId}`);
+  revalidatePath("/log");
   revalidatePath("/dashboard");
   revalidatePath("/stats");
 

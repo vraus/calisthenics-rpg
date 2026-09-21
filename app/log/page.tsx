@@ -1,9 +1,17 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getFamiliesWithExercises, getUserProgress } from "@/lib/data";
+import {
+  getFamiliesWithExercises,
+  getPlannedSessionXpSummary,
+  getUserProgress,
+  getWeeklyPlan,
+} from "@/lib/data";
 import { buildFamilyTree } from "@/lib/xp";
+import { getTodayDayOfWeek, getWeekStart } from "@/lib/week";
 import LogForm from "./log-form";
+import SessionRunner from "../plan/session-runner";
 
-export const metadata = { title: "Log séance — Calisthenics RPG" };
+export const metadata = { title: "Séance — Calisthenics RPG" };
 
 export default async function LogPage() {
   const supabase = await createClient();
@@ -11,9 +19,38 @@ export default async function LogPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    return (
+      <main className="flex flex-1 items-center justify-center px-6">
+        <p className="text-muted text-sm">Connecte-toi pour voir ta séance.</p>
+      </main>
+    );
+  }
+
+  const plan = await getWeeklyPlan(user.id, getWeekStart());
+  const todaySession = plan?.sessions.find((s) => s.dayOfWeek === getTodayDayOfWeek());
+
+  if (todaySession) {
+    const initialSummary = todaySession.completedAt
+      ? await getPlannedSessionXpSummary(user.id, todaySession.id)
+      : undefined;
+
+    return (
+      <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
+        <h1 className="font-display text-xl font-bold">
+          {todaySession.isRestDay ? "Repos" : todaySession.label}
+        </h1>
+        <SessionRunner session={todaySession} initialSummary={initialSummary} />
+        <Link href="/log/libre" className="text-sm text-muted text-center underline underline-offset-2">
+          Logger un exercice hors plan
+        </Link>
+      </main>
+    );
+  }
+
   const [familiesWithExercises, progress] = await Promise.all([
     getFamiliesWithExercises(),
-    user ? getUserProgress(user.id) : Promise.resolve([]),
+    getUserProgress(user.id),
   ]);
 
   const groups = familiesWithExercises.map(({ family, exercises }) => ({
@@ -25,7 +62,7 @@ export default async function LogPage() {
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full">
       <h1 className="font-display text-xl font-bold mb-1">Nouvelle séance</h1>
       <p className="text-sm text-muted mb-6">
-        Choisis un exercice débloqué et renseigne ta performance.
+        Rien de planifié aujourd&apos;hui — choisis un exercice et renseigne ta performance.
       </p>
       <LogForm groups={groups} />
     </main>

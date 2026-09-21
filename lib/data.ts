@@ -323,6 +323,46 @@ export async function getPlannedSessionDetail(
   };
 }
 
+/**
+ * XP summary for an already-completed planned session (training or rest) —
+ * used to show the right numbers on a cold revisit, instead of the 0 that
+ * client-only tracking would show after a page reload.
+ */
+export async function getPlannedSessionXpSummary(
+  userId: string,
+  plannedSessionId: string
+): Promise<{ xpEarned: number; bonusXp: number }> {
+  const supabase = await createClient();
+
+  const { data: exerciseRows } = await supabase
+    .from("planned_exercises")
+    .select("id")
+    .eq("planned_session_id", plannedSessionId)
+    .eq("user_id", userId);
+  const exerciseIds = (exerciseRows ?? []).map((e) => e.id);
+
+  const { data: setRows } = exerciseIds.length
+    ? await supabase.from("planned_sets").select("session_id").in("planned_exercise_id", exerciseIds)
+    : { data: [] };
+  const sessionIds = [
+    ...new Set((setRows ?? []).map((s) => s.session_id).filter((id): id is string => Boolean(id))),
+  ];
+
+  const { data: xpRows } = sessionIds.length
+    ? await supabase.from("sessions").select("xp_earned").in("id", sessionIds)
+    : { data: [] };
+  const xpEarned = (xpRows ?? []).reduce((sum, r) => sum + Number(r.xp_earned), 0);
+
+  const { data: bonusRows } = await supabase
+    .from("xp_bonuses")
+    .select("amount")
+    .eq("user_id", userId)
+    .eq("planned_session_id", plannedSessionId);
+  const bonusXp = (bonusRows ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
+
+  return { xpEarned, bonusXp };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapExerciseRow(row: any): Exercise {
   return {
