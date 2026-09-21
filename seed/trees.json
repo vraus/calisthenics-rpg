@@ -69,6 +69,22 @@
           "unlockType": "reps",
           "unlockThreshold": 3,
           "xpCoefficient": 6
+        },
+        {
+          "slug": "traction-archer",
+          "name": "Traction archer",
+          "tier": 9,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 9
+        },
+        {
+          "slug": "one-arm-pull-up-assiste",
+          "name": "One-arm pull-up assisté (élastique)",
+          "tier": 10,
+          "unlockType": "reps",
+          "unlockThreshold": 3,
+          "xpCoefficient": 14
         }
       ]
     },
@@ -125,6 +141,38 @@
           "unlockType": "reps",
           "unlockThreshold": 3,
           "xpCoefficient": 3.5
+        },
+        {
+          "slug": "dips-banc",
+          "name": "Dips banc",
+          "tier": 7,
+          "unlockType": "reps",
+          "unlockThreshold": 12,
+          "xpCoefficient": 0.7
+        },
+        {
+          "slug": "dips-paralleles",
+          "name": "Dips parallèles",
+          "tier": 8,
+          "unlockType": "reps",
+          "unlockThreshold": 10,
+          "xpCoefficient": 1.3
+        },
+        {
+          "slug": "tuck-planche",
+          "name": "Tuck planche",
+          "tier": 9,
+          "unlockType": "duration",
+          "unlockThreshold": 10,
+          "xpCoefficient": 3.0
+        },
+        {
+          "slug": "planche-avancee",
+          "name": "Planche avancée (straddle)",
+          "tier": 10,
+          "unlockType": "duration",
+          "unlockThreshold": 8,
+          "xpCoefficient": 5.5
         }
       ]
     },
@@ -173,6 +221,78 @@
           "unlockType": "duration",
           "unlockThreshold": 8,
           "xpCoefficient": 2.5
+        },
+        {
+          "slug": "tuck-front-lever",
+          "name": "Tuck front lever",
+          "tier": 6,
+          "unlockType": "duration",
+          "unlockThreshold": 10,
+          "xpCoefficient": 3.2
+        },
+        {
+          "slug": "front-lever",
+          "name": "Front lever",
+          "tier": 7,
+          "unlockType": "duration",
+          "unlockThreshold": 8,
+          "xpCoefficient": 5.5
+        },
+        {
+          "slug": "dragon-flag",
+          "name": "Dragon flag",
+          "tier": 8,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 4.0
+        }
+      ]
+    },
+    {
+      "slug": "jambes",
+      "name": "Jambes",
+      "statTag": "force-jambes",
+      "sortOrder": 4,
+      "exercises": [
+        {
+          "slug": "squats-corps-de-poids",
+          "name": "Squats corps de poids",
+          "tier": 1,
+          "unlockType": "reps",
+          "unlockThreshold": 20,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "squats-bulgares",
+          "name": "Squats bulgares",
+          "tier": 2,
+          "unlockType": "reps",
+          "unlockThreshold": 12,
+          "xpCoefficient": 0.5
+        },
+        {
+          "slug": "pistol-squat-assiste",
+          "name": "Pistol squat assisté",
+          "tier": 3,
+          "unlockType": "reps",
+          "unlockThreshold": 6,
+          "xpCoefficient": 1.0
+        },
+        {
+          "slug": "pistol-squat-strict",
+          "name": "Pistol squat strict",
+          "tier": 4,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 2.0
+        },
+        {
+          "slug": "pistol-squat-leste",
+          "name": "Pistol squat lesté",
+          "tier": 5,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 3.5
         }
       ]
     }

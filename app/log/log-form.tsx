@@ -65,9 +65,8 @@ export default function LogForm({ groups }: { groups: Group[] }) {
           {groups.map(({ family, nodes }) => (
             <optgroup key={family.id} label={family.name}>
               {nodes.map((node) => (
-                <option key={node.id} value={node.id} disabled={!node.unlocked}>
+                <option key={node.id} value={node.id}>
                   {node.name}
-                  {!node.unlocked ? " (verrouillé)" : ""}
                 </option>
               ))}
             </optgroup>

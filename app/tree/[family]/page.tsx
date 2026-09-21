@@ -59,7 +59,7 @@ export default async function FamilyTreePage({
                 <p className="font-medium">{node.name}</p>
                 <p className="text-xs text-muted">
                   {state === "locked"
-                    ? "Verrouillé"
+                    ? "Pas encore recommandé"
                     : `Seuil de maîtrise : ${node.unlockThreshold}${
                         node.unlockType === "duration" ? " s" : " reps"
                       }`}

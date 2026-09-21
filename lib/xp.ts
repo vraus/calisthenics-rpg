@@ -93,9 +93,12 @@ export interface TreeNodeState extends Exercise {
 }
 
 /**
- * Derives lock state for every exercise in a family: tier 1 is always
- * unlocked, and each subsequent tier unlocks once the previous tier's
- * exercise has been mastered (see meetsUnlockThreshold).
+ * Derives the *recommended* progression state for every exercise in a
+ * family: tier 1 is always "unlocked", and each subsequent tier unlocks
+ * once the previous tier's exercise has been mastered (see
+ * meetsUnlockThreshold). This is purely indicative for the tree view — it
+ * no longer gates what can be logged (see app/log/log-form.tsx), so someone
+ * who's already strong enough can log a high-tier exercise directly.
  */
 export function buildFamilyTree(
   exercises: Exercise[],
