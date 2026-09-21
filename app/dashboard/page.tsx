@@ -1,0 +1,110 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getFamiliesWithExercises, getRecentSessions, getUserProgress } from "@/lib/data";
+import { familyLevel, globalLevel } from "@/lib/xp";
+
+export const metadata = { title: "Dashboard — Calisthenics RPG" };
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <main className="flex flex-1 items-center justify-center px-6">
+        <p className="text-muted text-sm">Connecte-toi pour voir ton niveau.</p>
+      </main>
+    );
+  }
+
+  const [familiesWithExercises, progress, recentSessions] = await Promise.all([
+    getFamiliesWithExercises(),
+    getUserProgress(user.id),
+    getRecentSessions(user.id, 5),
+  ]);
+
+  const global = globalLevel(progress);
+  const totalXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
+  const globalXpTotal = global.xpIntoLevel + global.xpToNextLevel;
+  const progressPct = globalXpTotal > 0 ? Math.round((global.xpIntoLevel / globalXpTotal) * 100) : 0;
+
+  return (
+    <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
+      <section className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-sm text-muted">Niveau global</p>
+        <p className="text-4xl font-bold text-accent-strong">{global.level}</p>
+        <div className="mt-3 h-2 rounded-full bg-locked overflow-hidden">
+          <div
+            className="h-full bg-accent"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          {global.xpIntoLevel}/{globalXpTotal} XP · {totalXp} XP au total
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-medium text-muted mb-2">Familles</h2>
+        <div className="flex flex-col gap-2">
+          {familiesWithExercises.map(({ family, exercises }) => {
+            const familyProgress = progress.filter((p) =>
+              exercises.some((ex) => ex.id === p.exerciseId)
+            );
+            const level = familyLevel(familyProgress);
+            return (
+              <Link
+                key={family.id}
+                href={`/tree/${family.slug}`}
+                className="rounded-lg border border-border bg-surface p-3 flex items-center justify-between hover:border-accent transition-colors"
+              >
+                <span className="font-medium text-sm">{family.name}</span>
+                <span className="text-sm text-muted">niveau {level.level}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-medium text-muted">Séances récentes</h2>
+          <Link href="/history" className="text-xs text-accent-strong">
+            Tout voir
+          </Link>
+        </div>
+        {recentSessions.length === 0 ? (
+          <p className="text-sm text-muted">Aucune séance enregistrée.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {recentSessions.map((s) => {
+              // Nested select shape from Supabase (exercises(name, ...)) isn't
+              // typed by the client; read it defensively.
+              const exerciseName =
+                (s as { exercises?: { name?: string } | null }).exercises?.name ??
+                "Exercice";
+              return (
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-border bg-surface p-3 flex items-center justify-between text-sm"
+                >
+                  <span>{exerciseName}</span>
+                  <span className="text-muted">+{s.xp_earned} XP</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <Link
+        href="/log"
+        className="rounded-lg bg-accent px-4 py-3 text-center font-medium text-white hover:bg-accent-strong transition-colors"
+      >
+        Logger une séance
+      </Link>
+    </main>
+  );
+}

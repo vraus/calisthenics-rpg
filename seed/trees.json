@@ -1,0 +1,180 @@
+{
+  "families": [
+    {
+      "slug": "tractions",
+      "name": "Tractions",
+      "statTag": "force-tirage",
+      "sortOrder": 1,
+      "exercises": [
+        {
+          "slug": "dead-hang",
+          "name": "Dead hang",
+          "tier": 1,
+          "unlockType": "duration",
+          "unlockThreshold": 30,
+          "xpCoefficient": 0.5
+        },
+        {
+          "slug": "scapular-pulls",
+          "name": "Scapular pulls",
+          "tier": 2,
+          "unlockType": "reps",
+          "unlockThreshold": 8,
+          "xpCoefficient": 0.6
+        },
+        {
+          "slug": "rows-inverses",
+          "name": "Rows inversés",
+          "tier": 3,
+          "unlockType": "reps",
+          "unlockThreshold": 10,
+          "xpCoefficient": 0.8
+        },
+        {
+          "slug": "negatives",
+          "name": "Négatives contrôlées",
+          "tier": 4,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 1.2
+        },
+        {
+          "slug": "tractions-assistees",
+          "name": "Tractions assistées (élastique)",
+          "tier": 5,
+          "unlockType": "reps",
+          "unlockThreshold": 8,
+          "xpCoefficient": 1.6
+        },
+        {
+          "slug": "traction-stricte",
+          "name": "Traction stricte",
+          "tier": 6,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 2.5
+        },
+        {
+          "slug": "traction-lestee",
+          "name": "Traction lestée",
+          "tier": 7,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 4
+        },
+        {
+          "slug": "muscle-up",
+          "name": "Muscle-up",
+          "tier": 8,
+          "unlockType": "reps",
+          "unlockThreshold": 3,
+          "xpCoefficient": 6
+        }
+      ]
+    },
+    {
+      "slug": "pompes-equilibre",
+      "name": "Pompes / équilibre",
+      "statTag": "force-poussee",
+      "sortOrder": 2,
+      "exercises": [
+        {
+          "slug": "pompes-genoux",
+          "name": "Pompes sur genoux",
+          "tier": 1,
+          "unlockType": "reps",
+          "unlockThreshold": 12,
+          "xpCoefficient": 0.4
+        },
+        {
+          "slug": "pompes-strictes",
+          "name": "Pompes strictes",
+          "tier": 2,
+          "unlockType": "reps",
+          "unlockThreshold": 12,
+          "xpCoefficient": 0.6
+        },
+        {
+          "slug": "pompes-lestees",
+          "name": "Pompes lestées",
+          "tier": 3,
+          "unlockType": "reps",
+          "unlockThreshold": 8,
+          "xpCoefficient": 1.0
+        },
+        {
+          "slug": "pike-push-up",
+          "name": "Pike push-up",
+          "tier": 4,
+          "unlockType": "reps",
+          "unlockThreshold": 8,
+          "xpCoefficient": 1.4
+        },
+        {
+          "slug": "handstand-push-up-assiste",
+          "name": "Handstand push-up assisté (mur)",
+          "tier": 5,
+          "unlockType": "reps",
+          "unlockThreshold": 5,
+          "xpCoefficient": 2.2
+        },
+        {
+          "slug": "handstand-push-up-strict",
+          "name": "Handstand push-up strict",
+          "tier": 6,
+          "unlockType": "reps",
+          "unlockThreshold": 3,
+          "xpCoefficient": 3.5
+        }
+      ]
+    },
+    {
+      "slug": "gainage",
+      "name": "Gainage",
+      "statTag": "gainage",
+      "sortOrder": 3,
+      "exercises": [
+        {
+          "slug": "planche-ventrale",
+          "name": "Planche ventrale",
+          "tier": 1,
+          "unlockType": "duration",
+          "unlockThreshold": 45,
+          "xpCoefficient": 0.3
+        },
+        {
+          "slug": "planche-laterale",
+          "name": "Planche latérale",
+          "tier": 2,
+          "unlockType": "duration",
+          "unlockThreshold": 30,
+          "xpCoefficient": 0.4
+        },
+        {
+          "slug": "l-sit-assiste",
+          "name": "L-sit assisté (parallettes, genoux pliés)",
+          "tier": 3,
+          "unlockType": "duration",
+          "unlockThreshold": 15,
+          "xpCoefficient": 0.8
+        },
+        {
+          "slug": "l-sit-strict",
+          "name": "L-sit strict",
+          "tier": 4,
+          "unlockType": "duration",
+          "unlockThreshold": 15,
+          "xpCoefficient": 1.5
+        },
+        {
+          "slug": "v-sit",
+          "name": "V-sit",
+          "tier": 5,
+          "unlockType": "duration",
+          "unlockThreshold": 8,
+          "xpCoefficient": 2.5
+        }
+      ]
+    }
+  ]
+}
