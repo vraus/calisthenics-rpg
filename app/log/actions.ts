@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAllExercises, getFamilies, getRecentSessions } from "@/lib/data";
+import { getAllExercises, getFamilies, getRecentSessions, getRestDayCompletionDates } from "@/lib/data";
 import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import { evaluateNewBadges, type BadgeContext } from "@/lib/badges";
@@ -11,6 +11,7 @@ import type { Exercise, UserProgress } from "@/lib/types";
 export interface LogSessionResult {
   ok: boolean;
   error?: string;
+  sessionId?: string;
   xpEarned?: number;
   justMastered?: boolean;
   newBadgeNames?: string[];
@@ -31,10 +32,11 @@ async function awardNewBadges(
   progress: UserProgress[]
 ): Promise<string[]> {
   try {
-    const [families, exercises, sessions, earnedRows] = await Promise.all([
+    const [families, exercises, sessions, restDayDates, earnedRows] = await Promise.all([
       getFamilies(),
       getAllExercises(),
       getRecentSessions(userId, 1000),
+      getRestDayCompletionDates(userId),
       supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
     ]);
 
@@ -68,7 +70,7 @@ async function awardNewBadges(
 
     const ctx: BadgeContext = {
       sessionCount: sessions.length,
-      currentStreak: computeStreak(sessions.map((s) => s.performed_at)).current,
+      currentStreak: computeStreak([...sessions.map((s) => s.performed_at), ...restDayDates]).current,
       globalLevel: globalLevel(progress).level,
       masteredExerciseSlugs,
       masteredSlugsByFamily,
@@ -93,6 +95,118 @@ async function awardNewBadges(
   } catch {
     return [];
   }
+}
+
+/**
+ * Logs one performance (sets × reps or duration) against a given exercise
+ * for the given user: inserts the session, updates user_progress, evaluates
+ * badges and the global level-up. Shared by the free-form log form
+ * (logSession below) and the weekly-plan set validation (app/plan/actions.ts)
+ * so both paths get identical XP/mastery/badge/level-up behavior.
+ */
+export async function logExercisePerformance(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  exercise: Exercise,
+  sets: number,
+  performance: { repsPerSet?: number; durationSeconds?: number }
+): Promise<LogSessionResult> {
+  const session = {
+    exerciseId: exercise.id,
+    sets,
+    repsPerSet: performance.repsPerSet,
+    durationSeconds: performance.durationSeconds,
+  };
+
+  let xpEarned: number;
+  try {
+    xpEarned = computeSessionXp(session, exercise);
+  } catch {
+    return { ok: false, error: "Saisie incohérente avec ce type d'exercice." };
+  }
+
+  const justMastered = meetsUnlockThreshold(session, exercise);
+
+  const { data: progressBefore } = await supabase
+    .from("user_progress")
+    .select("user_id, exercise_id, xp_in_exercise, mastered, mastered_at")
+    .eq("user_id", userId);
+
+  const beforeLevel = globalLevel(
+    (progressBefore ?? []).map((p) => ({ xpInExercise: Number(p.xp_in_exercise) }))
+  ).level;
+  const existingProgress = (progressBefore ?? []).find((p) => p.exercise_id === exercise.id);
+
+  const { data: sessionRow, error: insertError } = await supabase
+    .from("sessions")
+    .insert({
+      user_id: userId,
+      exercise_id: exercise.id,
+      sets: session.sets,
+      reps_per_set: session.repsPerSet ?? null,
+      duration_seconds: session.durationSeconds ?? null,
+      xp_earned: xpEarned,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !sessionRow) {
+    return { ok: false, error: "Échec de l'enregistrement de la séance." };
+  }
+
+  const newXp = (existingProgress ? Number(existingProgress.xp_in_exercise) : 0) + xpEarned;
+  const newMastered = existingProgress?.mastered || justMastered;
+
+  const { error: progressError } = await supabase.from("user_progress").upsert(
+    {
+      user_id: userId,
+      exercise_id: exercise.id,
+      xp_in_exercise: newXp,
+      mastered: newMastered,
+      mastered_at: newMastered && !existingProgress?.mastered ? new Date().toISOString() : undefined,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,exercise_id" }
+  );
+
+  if (progressError) {
+    return { ok: false, error: "Échec de la mise à jour de la progression." };
+  }
+
+  const progressAfter: UserProgress[] = (progressBefore ?? [])
+    .filter((p) => p.exercise_id !== exercise.id)
+    .map((p) => ({
+      userId: p.user_id,
+      exerciseId: p.exercise_id,
+      xpInExercise: Number(p.xp_in_exercise),
+      mastered: p.mastered,
+      masteredAt: p.mastered_at ?? undefined,
+    }));
+  progressAfter.push({
+    userId,
+    exerciseId: exercise.id,
+    xpInExercise: newXp,
+    mastered: newMastered,
+  });
+
+  const afterLevel = globalLevel(progressAfter).level;
+  const newBadgeNames = await awardNewBadges(supabase, userId, progressAfter);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/tree");
+  revalidatePath("/history");
+  revalidatePath("/stats");
+  revalidatePath("/plan");
+
+  return {
+    ok: true,
+    sessionId: sessionRow.id,
+    xpEarned,
+    justMastered: justMastered && !existingProgress?.mastered,
+    newBadgeNames: newBadgeNames.length > 0 ? newBadgeNames : undefined,
+    leveledUp: afterLevel > beforeLevel,
+    newLevel: afterLevel > beforeLevel ? afterLevel : undefined,
+  };
 }
 
 /**
@@ -142,94 +256,8 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
     xpCoefficient: Number(exerciseRow.xp_coefficient),
   };
 
-  const session = {
-    exerciseId: exercise.id,
-    sets,
+  return logExercisePerformance(supabase, user.id, exercise, sets, {
     repsPerSet: repsRaw ? Number(repsRaw) : undefined,
     durationSeconds: durationRaw ? Number(durationRaw) : undefined,
-  };
-
-  let xpEarned: number;
-  try {
-    xpEarned = computeSessionXp(session, exercise);
-  } catch {
-    return { ok: false, error: "Saisie incohérente avec ce type d'exercice." };
-  }
-
-  const justMastered = meetsUnlockThreshold(session, exercise);
-
-  const { data: progressBefore } = await supabase
-    .from("user_progress")
-    .select("user_id, exercise_id, xp_in_exercise, mastered, mastered_at")
-    .eq("user_id", user.id);
-
-  const beforeLevel = globalLevel(
-    (progressBefore ?? []).map((p) => ({ xpInExercise: Number(p.xp_in_exercise) }))
-  ).level;
-  const existingProgress = (progressBefore ?? []).find((p) => p.exercise_id === exercise.id);
-
-  const { error: insertError } = await supabase.from("sessions").insert({
-    user_id: user.id,
-    exercise_id: exercise.id,
-    sets: session.sets,
-    reps_per_set: session.repsPerSet ?? null,
-    duration_seconds: session.durationSeconds ?? null,
-    xp_earned: xpEarned,
   });
-
-  if (insertError) {
-    return { ok: false, error: "Échec de l'enregistrement de la séance." };
-  }
-
-  const newXp = (existingProgress ? Number(existingProgress.xp_in_exercise) : 0) + xpEarned;
-  const newMastered = existingProgress?.mastered || justMastered;
-
-  const { error: progressError } = await supabase.from("user_progress").upsert(
-    {
-      user_id: user.id,
-      exercise_id: exercise.id,
-      xp_in_exercise: newXp,
-      mastered: newMastered,
-      mastered_at: newMastered && !existingProgress?.mastered ? new Date().toISOString() : undefined,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,exercise_id" }
-  );
-
-  if (progressError) {
-    return { ok: false, error: "Échec de la mise à jour de la progression." };
-  }
-
-  const progressAfter: UserProgress[] = (progressBefore ?? [])
-    .filter((p) => p.exercise_id !== exercise.id)
-    .map((p) => ({
-      userId: p.user_id,
-      exerciseId: p.exercise_id,
-      xpInExercise: Number(p.xp_in_exercise),
-      mastered: p.mastered,
-      masteredAt: p.mastered_at ?? undefined,
-    }));
-  progressAfter.push({
-    userId: user.id,
-    exerciseId: exercise.id,
-    xpInExercise: newXp,
-    mastered: newMastered,
-  });
-
-  const afterLevel = globalLevel(progressAfter).level;
-  const newBadgeNames = await awardNewBadges(supabase, user.id, progressAfter);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/tree");
-  revalidatePath("/history");
-  revalidatePath("/stats");
-
-  return {
-    ok: true,
-    xpEarned,
-    justMastered: justMastered && !existingProgress?.mastered,
-    newBadgeNames: newBadgeNames.length > 0 ? newBadgeNames : undefined,
-    leveledUp: afterLevel > beforeLevel,
-    newLevel: afterLevel > beforeLevel ? afterLevel : undefined,
-  };
 }

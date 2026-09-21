@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getRecentSessions, getUserProgress } from "@/lib/data";
-import { globalLevel } from "@/lib/xp";
+import { getRecentSessions, getRestDayCompletionDates, getUserProgress, getXpBonusTotal } from "@/lib/data";
+import { levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 
 export const metadata = { title: "Stats — Calisthenics RPG" };
@@ -35,11 +35,13 @@ export default async function StatsPage() {
     );
   }
 
-  const [progress, sessions, badgesResult, earnedResult] = await Promise.all([
+  const [progress, sessions, badgesResult, earnedResult, bonusXp, restDayDates] = await Promise.all([
     getUserProgress(user.id),
     getRecentSessions(user.id, 1000) as Promise<SessionRow[]>,
     supabase.from("badges").select("slug, name, description, sort_order").order("sort_order"),
     supabase.from("user_badges").select("earned_at, badges(slug)").eq("user_id", user.id),
+    getXpBonusTotal(user.id),
+    getRestDayCompletionDates(user.id),
   ]);
 
   const badges: Badge[] = badgesResult.data ?? [];
@@ -53,9 +55,10 @@ export default async function StatsPage() {
       .filter((entry): entry is [string, string] => Boolean(entry[0]))
   );
 
-  const global = globalLevel(progress);
-  const totalXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
-  const streak = computeStreak(sessions.map((s) => s.performed_at));
+  const progressXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
+  const totalXp = progressXp + bonusXp;
+  const global = levelFromXp(totalXp);
+  const streak = computeStreak([...sessions.map((s) => s.performed_at), ...restDayDates]);
 
   const bestByExercise = new Map<string, { value: number; unit: "reps" | "s" }>();
   for (const s of sessions) {

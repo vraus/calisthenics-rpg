@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import type { ExerciseFamily } from "@/lib/types";
 import type { TreeNodeState } from "@/lib/xp";
 import { logSession } from "./actions";
+import { useLevelUp, LevelUpOverlay, BadgeChips } from "../xp-feedback";
 
 interface Group {
   family: ExerciseFamily;
@@ -21,13 +22,7 @@ export default function LogForm({ groups }: { groups: Group[] }) {
   const [feedback, setFeedback] = useState<
     { kind: "success" | "error"; message: string; badges?: string[] } | null
   >(null);
-  const [levelUp, setLevelUp] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (levelUp === null) return;
-    const timer = setTimeout(() => setLevelUp(null), 2500);
-    return () => clearTimeout(timer);
-  }, [levelUp]);
+  const { level: levelUp, trigger: triggerLevelUp } = useLevelUp();
 
   const selected = allNodes.find((n) => n.id === exerciseId);
 
@@ -59,7 +54,7 @@ export default function LogForm({ groups }: { groups: Group[] }) {
         badges: result.newBadgeNames,
       });
       if (result.leveledUp && result.newLevel) {
-        setLevelUp(result.newLevel);
+        triggerLevelUp(result.newLevel);
       }
     });
   }
@@ -135,26 +130,12 @@ export default function LogForm({ groups }: { groups: Group[] }) {
             >
               {feedback.message}
             </p>
-            {feedback.badges?.map((name) => (
-              <span
-                key={name}
-                className="panel-rpg panel-rpg-gold inline-flex w-fit items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gold"
-              >
-                🏆 Nouveau badge : {name}
-              </span>
-            ))}
+            <BadgeChips names={feedback.badges} />
           </div>
         ) : null}
       </form>
 
-      {levelUp !== null ? (
-        <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
-          <div className="panel-rpg panel-rpg-gold animate-level-up px-10 py-6 text-center">
-            <p className="text-xs uppercase tracking-widest text-gold">Niveau supérieur</p>
-            <p className="font-display text-4xl font-bold text-gold">Niveau {levelUp}</p>
-          </div>
-        </div>
-      ) : null}
+      <LevelUpOverlay level={levelUp} />
     </>
   );
 }

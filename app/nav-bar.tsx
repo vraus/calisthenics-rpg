@@ -7,6 +7,7 @@ import { logout } from "./logout/actions";
 
 const LINKS = [
   { href: "/dashboard", label: "Niveau" },
+  { href: "/plan", label: "Plan" },
   { href: "/log", label: "Séance" },
   { href: "/tree", label: "Arbres" },
   { href: "/history", label: "Historique" },

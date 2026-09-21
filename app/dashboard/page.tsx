@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getFamiliesWithExercises, getRecentSessions, getUserProgress } from "@/lib/data";
-import { familyLevel, globalLevel } from "@/lib/xp";
+import {
+  getFamiliesWithExercises,
+  getRecentSessions,
+  getRestDayCompletionDates,
+  getUserProgress,
+  getXpBonusTotal,
+} from "@/lib/data";
+import { familyLevel, levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 
 export const metadata = { title: "Dashboard — Calisthenics RPG" };
@@ -20,16 +26,20 @@ export default async function DashboardPage() {
     );
   }
 
-  const [familiesWithExercises, progress, recentSessions, allSessions] = await Promise.all([
-    getFamiliesWithExercises(),
-    getUserProgress(user.id),
-    getRecentSessions(user.id, 5),
-    getRecentSessions(user.id, 1000),
-  ]);
+  const [familiesWithExercises, progress, recentSessions, allSessions, bonusXp, restDayDates] =
+    await Promise.all([
+      getFamiliesWithExercises(),
+      getUserProgress(user.id),
+      getRecentSessions(user.id, 5),
+      getRecentSessions(user.id, 1000),
+      getXpBonusTotal(user.id),
+      getRestDayCompletionDates(user.id),
+    ]);
 
-  const streak = computeStreak(allSessions.map((s) => s.performed_at));
-  const global = globalLevel(progress);
-  const totalXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
+  const streak = computeStreak([...allSessions.map((s) => s.performed_at), ...restDayDates]);
+  const progressXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
+  const totalXp = progressXp + bonusXp;
+  const global = levelFromXp(totalXp);
   const globalXpTotal = global.xpIntoLevel + global.xpToNextLevel;
   const progressPct = globalXpTotal > 0 ? Math.round((global.xpIntoLevel / globalXpTotal) * 100) : 0;
 
