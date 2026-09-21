@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getFamiliesWithExercises, getRecentSessions, getUserProgress } from "@/lib/data";
 import { familyLevel, globalLevel } from "@/lib/xp";
+import { computeStreak } from "@/lib/streak";
 
 export const metadata = { title: "Dashboard — Calisthenics RPG" };
 
@@ -19,12 +20,14 @@ export default async function DashboardPage() {
     );
   }
 
-  const [familiesWithExercises, progress, recentSessions] = await Promise.all([
+  const [familiesWithExercises, progress, recentSessions, allSessions] = await Promise.all([
     getFamiliesWithExercises(),
     getUserProgress(user.id),
     getRecentSessions(user.id, 5),
+    getRecentSessions(user.id, 1000),
   ]);
 
+  const streak = computeStreak(allSessions.map((s) => s.performed_at));
   const global = globalLevel(progress);
   const totalXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
   const globalXpTotal = global.xpIntoLevel + global.xpToNextLevel;
@@ -33,8 +36,17 @@ export default async function DashboardPage() {
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
       <section className="rounded-xl border border-border bg-surface p-5">
-        <p className="text-sm text-muted">Niveau global</p>
-        <p className="text-4xl font-bold text-accent-strong">{global.level}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-muted">Niveau global</p>
+            <p className="text-4xl font-bold text-accent-strong">{global.level}</p>
+          </div>
+          {streak.current > 0 ? (
+            <p className="text-sm font-medium text-accent-strong">
+              {streak.current} 🔥
+            </p>
+          ) : null}
+        </div>
         <div className="mt-3 h-2 rounded-full bg-locked overflow-hidden">
           <div
             className="h-full bg-accent"

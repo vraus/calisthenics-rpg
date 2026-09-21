@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/log", label: "Séance" },
   { href: "/tree", label: "Arbres" },
   { href: "/history", label: "Historique" },
+  { href: "/stats", label: "Stats" },
 ] as const;
 
 const HIDDEN_ON = ["/login", "/auth"];

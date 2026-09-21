@@ -1,0 +1,58 @@
+{
+  "badges": [
+    {
+      "slug": "premiere-seance",
+      "name": "Premier pas",
+      "description": "Logger sa première séance.",
+      "sortOrder": 1
+    },
+    {
+      "slug": "regularite-7-jours",
+      "name": "Régularité",
+      "description": "7 jours d'affilée avec au moins une séance.",
+      "sortOrder": 2
+    },
+    {
+      "slug": "un-mois-de-suite",
+      "name": "Un mois de suite",
+      "description": "30 jours d'affilée avec au moins une séance.",
+      "sortOrder": 3
+    },
+    {
+      "slug": "centurion",
+      "name": "Centurion",
+      "description": "100 séances loggées au total.",
+      "sortOrder": 4
+    },
+    {
+      "slug": "premier-muscle-up",
+      "name": "Premier muscle-up",
+      "description": "Maîtriser le muscle-up.",
+      "sortOrder": 5
+    },
+    {
+      "slug": "premier-front-lever",
+      "name": "Premier front lever",
+      "description": "Maîtriser le front lever.",
+      "sortOrder": 6
+    },
+    {
+      "slug": "niveau-10-global",
+      "name": "Niveau 10",
+      "description": "Atteindre le niveau global 10.",
+      "sortOrder": 7
+    },
+    {
+      "slug": "touche-a-tout",
+      "name": "Touche-à-tout",
+      "description": "Maîtriser au moins un exercice dans chaque famille.",
+      "sortOrder": 8
+    },
+    {
+      "slug": "jambes-de-fer",
+      "name": "Jambes de fer",
+      "description": "Maîtriser tous les exercices de la famille Jambes.",
+      "sortOrder": 9
+    }
+  ]
+}

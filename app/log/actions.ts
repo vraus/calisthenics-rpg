@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { computeSessionXp, meetsUnlockThreshold } from "@/lib/xp";
+import { getAllExercises, getFamilies, getRecentSessions, getUserProgress } from "@/lib/data";
+import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
+import { computeStreak } from "@/lib/streak";
+import { evaluateNewBadges, type BadgeContext } from "@/lib/badges";
 import type { Exercise } from "@/lib/types";
 
 export interface LogSessionResult {
@@ -10,6 +13,82 @@ export interface LogSessionResult {
   error?: string;
   xpEarned?: number;
   justMastered?: boolean;
+  newBadgeNames?: string[];
+}
+
+/**
+ * Assembles the badge context from already-fetched data and persists any
+ * newly-earned badges. Never throws: a badge-evaluation hiccup shouldn't
+ * fail the session that was already successfully logged.
+ */
+async function awardNewBadges(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<string[]> {
+  try {
+    const [families, exercises, progress, sessions, earnedRows] = await Promise.all([
+      getFamilies(),
+      getAllExercises(),
+      getUserProgress(userId),
+      getRecentSessions(userId, 1000),
+      supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
+    ]);
+
+    const familySlugById = new Map(families.map((f) => [f.id, f.slug]));
+    const masteredExerciseSlugs = new Set<string>();
+    const masteredSlugsByFamily: Record<string, Set<string>> = {};
+    const totalExercisesByFamily: Record<string, number> = {};
+
+    const exerciseById = new Map(exercises.map((ex) => [ex.id, ex]));
+    for (const ex of exercises) {
+      const familySlug = familySlugById.get(ex.familyId);
+      if (!familySlug) continue;
+      totalExercisesByFamily[familySlug] = (totalExercisesByFamily[familySlug] ?? 0) + 1;
+    }
+    for (const p of progress) {
+      if (!p.mastered) continue;
+      const exercise = exerciseById.get(p.exerciseId);
+      if (!exercise) continue;
+      masteredExerciseSlugs.add(exercise.slug);
+      const familySlug = familySlugById.get(exercise.familyId);
+      if (!familySlug) continue;
+      (masteredSlugsByFamily[familySlug] ??= new Set()).add(exercise.slug);
+    }
+
+    const alreadyEarnedSlugs = new Set(
+      (earnedRows.data ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((row: any) => row.badges?.slug as string | undefined)
+        .filter((slug): slug is string => Boolean(slug))
+    );
+
+    const ctx: BadgeContext = {
+      sessionCount: sessions.length,
+      currentStreak: computeStreak(sessions.map((s) => s.performed_at)).current,
+      globalLevel: globalLevel(progress).level,
+      masteredExerciseSlugs,
+      masteredSlugsByFamily,
+      totalExercisesByFamily,
+    };
+
+    const newSlugs = evaluateNewBadges(ctx, alreadyEarnedSlugs);
+    if (newSlugs.length === 0) return [];
+
+    const { data: badgeRows } = await supabase
+      .from("badges")
+      .select("id, slug, name")
+      .in("slug", newSlugs);
+
+    if (!badgeRows || badgeRows.length === 0) return [];
+
+    await supabase.from("user_badges").insert(
+      badgeRows.map((b) => ({ user_id: userId, badge_id: b.id }))
+    );
+
+    return badgeRows.map((b) => b.name);
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -114,13 +193,17 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
     return { ok: false, error: "Échec de la mise à jour de la progression." };
   }
 
+  const newBadgeNames = await awardNewBadges(supabase, user.id);
+
   revalidatePath("/dashboard");
   revalidatePath("/tree");
   revalidatePath("/history");
+  revalidatePath("/stats");
 
   return {
     ok: true,
     xpEarned,
     justMastered: justMastered && !existingProgress?.mastered,
+    newBadgeNames: newBadgeNames.length > 0 ? newBadgeNames : undefined,
   };
 }

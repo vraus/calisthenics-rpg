@@ -19,7 +19,8 @@ niveau global. PWA installable sur mobile.
 ### 1. Projet Supabase
 
 1. Créer un projet sur [supabase.com](https://supabase.com).
-2. Dans SQL Editor, exécuter `supabase/migrations/0001_init.sql`.
+2. Dans SQL Editor, exécuter les fichiers de `supabase/migrations/` dans
+   l'ordre (`0001_init.sql` puis `0002_badges.sql`, etc.).
 3. Dans Authentication → Providers → Email, laisser Email activé
    (authentification par mot de passe). Désactiver "Confirm email" si tu
    veux que les comptes créés via le code d'invitation soient actifs sans
@@ -91,6 +92,13 @@ niveau, agrégation par famille et globale, déblocage de tier.
   `user_progress` y font référence pour de vrais utilisateurs ; on ajoute
   toujours de nouveaux tiers/familles, jamais en remplaçant les existants.
   `npm run seed` est idempotent (upsert par slug).
+- `seed/badges.json` — catalogue des badges (même règle de compatibilité :
+  un `slug` de badge ne se renomme ni ne se supprime, `user_badges` y fait
+  référence). `lib/badges.ts` définit les critères de déblocage (pur, testé,
+  sans dépendance Supabase).
+- `lib/streak.ts` — calcul du streak d'assiduité à partir des séances
+  loggées, rien n'est stocké.
+- `app/stats/` — page stats/records perso et badges obtenus.
 - `app/log/` — page + Server Action de logging de séance.
 - `app/tree/` — vue arbres de compétences (index + détail par famille).
 - `app/dashboard/` — niveau global, XP, séances récentes.

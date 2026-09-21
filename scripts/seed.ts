@@ -1,6 +1,7 @@
 /**
- * Charge seed/trees.json dans Supabase (exercise_families + exercises).
- * Idempotent : upsert sur le slug, exécutable plusieurs fois sans dupliquer.
+ * Charge seed/trees.json (exercise_families + exercises) et seed/badges.json
+ * (badges) dans Supabase. Idempotent : upsert sur le slug, exécutable
+ * plusieurs fois sans dupliquer.
  *
  * Usage : npm run seed
  * Requiert dans l'environnement : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -34,6 +35,13 @@ interface SeedFamily {
   statTag: string;
   sortOrder: number;
   exercises: SeedExercise[];
+}
+
+interface SeedBadge {
+  slug: string;
+  name: string;
+  description: string;
+  sortOrder: number;
 }
 
 async function main() {
@@ -95,6 +103,25 @@ async function main() {
 
     console.log(`✓ ${family.name} (${family.exercises.length} exercices)`);
   }
+
+  const badgesRaw = readFileSync(path.join(__dirname, "..", "seed", "badges.json"), "utf-8");
+  const badgesData = JSON.parse(badgesRaw) as { badges: SeedBadge[] };
+
+  const { error: badgesError } = await supabase.from("badges").upsert(
+    badgesData.badges.map((b) => ({
+      slug: b.slug,
+      name: b.name,
+      description: b.description,
+      sort_order: b.sortOrder,
+    })),
+    { onConflict: "slug" }
+  );
+
+  if (badgesError) {
+    throw new Error(`Échec upsert badges: ${badgesError.message}`);
+  }
+
+  console.log(`✓ Badges (${badgesData.badges.length})`);
 
   console.log("Seed terminé.");
 }

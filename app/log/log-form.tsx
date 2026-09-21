@@ -46,9 +46,12 @@ export default function LogForm({ groups }: { groups: Group[] }) {
       const masteredNote = result.justMastered
         ? ` Tier suivant débloqué sur ${selected.name}.`
         : "";
+      const badgeNote = result.newBadgeNames?.length
+        ? ` Nouveau badge : ${result.newBadgeNames.join(", ")}.`
+        : "";
       setFeedback({
         kind: "success",
-        message: `+${result.xpEarned} XP.${masteredNote}`,
+        message: `+${result.xpEarned} XP.${masteredNote}${badgeNote}`,
       });
     });
   }
