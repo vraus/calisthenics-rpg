@@ -5,6 +5,7 @@ import type { ExerciseFamily } from "@/lib/types";
 import type { TreeNodeState } from "@/lib/xp";
 import { logSession } from "./actions";
 import { useLevelUp, LevelUpOverlay, BadgeChips } from "../xp-feedback";
+import { fireConfettiCelebration } from "../confetti";
 
 interface Group {
   family: ExerciseFamily;
@@ -53,6 +54,7 @@ export default function LogForm({ groups }: { groups: Group[] }) {
         message: `+${result.xpEarned} XP.${masteredNote}`,
         badges: result.newBadgeNames,
       });
+      fireConfettiCelebration();
       if (result.leveledUp && result.newLevel) {
         triggerLevelUp(result.newLevel);
       }
@@ -122,7 +124,7 @@ export default function LogForm({ groups }: { groups: Group[] }) {
         <button
           type="submit"
           disabled={isPending || !selected}
-          className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-all duration-150 active:scale-95 hover:bg-accent-strong disabled:opacity-50"
         >
           {isPending ? "Enregistrement..." : "Valider la séance"}
         </button>

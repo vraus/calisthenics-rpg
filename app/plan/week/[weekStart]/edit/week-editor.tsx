@@ -254,7 +254,7 @@ export default function WeekEditor({
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
+        className="rounded-lg bg-accent px-4 py-3 font-medium text-white transition-all duration-150 active:scale-95 hover:bg-accent-strong disabled:opacity-50"
       >
         {isPending ? "Enregistrement..." : "Enregistrer ma semaine"}
       </button>

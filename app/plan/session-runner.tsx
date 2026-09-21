@@ -4,12 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PlannedSession } from "@/lib/types";
 import { validateSet, validateRemainingSets, finalizePlannedSession, markRestDayDone } from "./actions";
-import { useLevelUp, LevelUpOverlay, BadgeChips } from "../xp-feedback";
+import { useLevelUp, LevelUpOverlay, BadgeChips, usePerfectWeek, PerfectWeekOverlay } from "../xp-feedback";
+import { fireConfettiBurst, fireConfettiCelebration, fireConfettiGrand } from "../confetti";
 
 interface InitialSummary {
   xpEarned: number;
   bonusXp?: number;
 }
+
+const PRESS_EFFECT = "active:scale-95 duration-100";
 
 export default function SessionRunner({
   session,
@@ -34,6 +37,22 @@ export default function SessionRunner({
       : null
   );
   const { level: levelUp, trigger: triggerLevelUp } = useLevelUp();
+  const { active: perfectWeek, trigger: triggerPerfectWeek } = usePerfectWeek();
+
+  /** Escalating confetti for a just-finalized day, plus the perfect-week wave on top. */
+  function celebrateFinalization(fullCompletion?: boolean, perfectWeekBonusXp?: number) {
+    if (fullCompletion) {
+      fireConfettiGrand();
+    } else {
+      fireConfettiCelebration();
+    }
+    if (perfectWeekBonusXp) {
+      setTimeout(() => {
+        fireConfettiGrand();
+        triggerPerfectWeek();
+      }, 500);
+    }
+  }
 
   function handleSet(plannedSetId: string) {
     setPendingId(plannedSetId);
@@ -68,6 +87,7 @@ export default function SessionRunner({
         bonusXp: result.bonusXp,
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
+      celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
       router.refresh();
     });
   }
@@ -85,6 +105,7 @@ export default function SessionRunner({
         bonusXp: result.bonusXp,
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
+      celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
       router.refresh();
     });
   }
@@ -118,6 +139,9 @@ export default function SessionRunner({
         bonusXp: result.bonusXp,
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
+      celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
+    } else {
+      fireConfettiBurst();
     }
     router.refresh();
   }
@@ -125,7 +149,11 @@ export default function SessionRunner({
   if (session.isRestDay) {
     if (finalized) {
       return (
-        <div className="panel-rpg panel-rpg-gold p-6 text-center flex flex-col gap-2">
+        <div
+          className={`panel-rpg panel-rpg-gold p-6 text-center flex flex-col gap-2 ${
+            finalized.fullCompletion ? "animate-celebrate" : ""
+          }`}
+        >
           <p className="font-display text-2xl font-bold text-gold">Jour de repos terminé.</p>
           {finalized.bonusXp ? <p className="text-sm text-gold">+{finalized.bonusXp} XP repos</p> : null}
           {finalized.perfectWeekBonusXp ? (
@@ -134,11 +162,12 @@ export default function SessionRunner({
           <button
             type="button"
             onClick={() => router.push("/plan")}
-            className="mt-2 rounded-lg bg-accent px-4 py-3 font-medium text-white hover:bg-accent-strong transition-colors"
+            className={`mt-2 rounded-lg bg-accent px-4 py-3 font-medium text-white hover:bg-accent-strong transition-all ${PRESS_EFFECT}`}
           >
             Retour au plan
           </button>
           <LevelUpOverlay level={levelUp} />
+          <PerfectWeekOverlay active={perfectWeek} />
         </div>
       );
     }
@@ -152,7 +181,7 @@ export default function SessionRunner({
           type="button"
           onClick={handleRestDay}
           disabled={isPending}
-          className="rounded-lg bg-accent px-4 py-3 font-medium text-white hover:bg-accent-strong transition-colors disabled:opacity-50"
+          className={`rounded-lg bg-accent px-4 py-3 font-medium text-white hover:bg-accent-strong transition-all disabled:opacity-50 ${PRESS_EFFECT}`}
         >
           {isPending ? "..." : "Marquer comme reposé"}
         </button>
@@ -163,7 +192,11 @@ export default function SessionRunner({
 
   if (finalized) {
     return (
-      <div className="panel-rpg panel-rpg-gold p-6 text-center flex flex-col gap-2">
+      <div
+        className={`panel-rpg panel-rpg-gold p-6 text-center flex flex-col gap-2 ${
+          finalized.fullCompletion ? "animate-celebrate" : ""
+        }`}
+      >
         <p className="font-display text-2xl font-bold text-gold">
           {finalized.fullCompletion ? "Séance terminée à 100% !" : "Séance terminée."}
         </p>
@@ -177,12 +210,13 @@ export default function SessionRunner({
         <button
           type="button"
           onClick={() => router.push("/plan")}
-          className="mt-2 rounded-lg bg-accent px-4 py-3 font-medium text-white hover:bg-accent-strong transition-colors"
+          className={`mt-2 rounded-lg bg-accent px-4 py-3 font-medium text-white hover:bg-accent-strong transition-all ${PRESS_EFFECT}`}
         >
           Retour au plan
         </button>
         <BadgeChips names={badges} />
         <LevelUpOverlay level={levelUp} />
+        <PerfectWeekOverlay active={perfectWeek} />
       </div>
     );
   }
@@ -207,7 +241,7 @@ export default function SessionRunner({
                   type="button"
                   disabled={Boolean(set.doneAt) || (isPending && pendingId === set.id)}
                   onClick={() => handleSet(set.id)}
-                  className={`h-10 w-10 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`h-10 w-10 rounded-lg border text-sm font-medium transition-all ${PRESS_EFFECT} ${
                     set.doneAt
                       ? "border-gold bg-locked text-gold"
                       : "border-border text-foreground hover:border-accent"
@@ -222,7 +256,7 @@ export default function SessionRunner({
                 type="button"
                 disabled={isPending && pendingId === exercise.id}
                 onClick={() => handleExercise(exercise.id)}
-                className="text-sm text-accent-strong text-left"
+                className={`text-sm text-accent-strong text-left ${PRESS_EFFECT}`}
               >
                 Valider tout l&apos;exercice ({remaining} restantes)
               </button>
@@ -239,7 +273,7 @@ export default function SessionRunner({
         type="button"
         onClick={handleFinalize}
         disabled={isPending}
-        className="rounded-lg border border-gold px-4 py-3 font-medium text-gold hover:bg-locked transition-colors disabled:opacity-50"
+        className={`rounded-lg border border-gold px-4 py-3 font-medium text-gold hover:bg-locked transition-all disabled:opacity-50 ${PRESS_EFFECT}`}
       >
         Terminer la séance
       </button>
