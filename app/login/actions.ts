@@ -77,6 +77,70 @@ export async function login(formData: FormData): Promise<LoginResult> {
   redirect("/dashboard");
 }
 
+export interface SignupResult {
+  error?: string;
+  sent?: boolean;
+}
+
+/**
+ * Creates an account, gated by a shared invite code (SIGNUP_INVITE_CODE) so
+ * the signup form can't be used by anyone who just finds the site URL.
+ * Whether this redirects straight to /dashboard or asks to check email
+ * depends on the Supabase project's "Confirm email" setting: signUp returns
+ * a session immediately when it's off, or just a user (no session) when a
+ * confirmation email is required first.
+ */
+export async function signup(formData: FormData): Promise<SignupResult> {
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const inviteCode = String(formData.get("inviteCode") ?? "");
+
+  if (!email || !password) {
+    return { error: "Email et mot de passe requis." };
+  }
+  if (inviteCode !== process.env.SIGNUP_INVITE_CODE) {
+    return { error: "Inscription refusée." };
+  }
+  if (password.length < 8) {
+    return { error: "Le mot de passe doit contenir au moins 8 caractères." };
+  }
+  if (password !== confirmPassword) {
+    return { error: "Les mots de passe ne correspondent pas." };
+  }
+
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, withRememberMaxAge(options, false));
+          }
+        },
+      },
+    }
+  );
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+
+  if (error) {
+    return { error: "Impossible de créer ce compte pour le moment." };
+  }
+
+  if (data.session) {
+    redirect("/dashboard");
+  }
+
+  return { sent: true };
+}
+
 export interface ResetPasswordResult {
   error?: string;
   sent?: boolean;
