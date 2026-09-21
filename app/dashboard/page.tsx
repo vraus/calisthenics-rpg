@@ -5,10 +5,12 @@ import {
   getRecentSessions,
   getRestDayCompletionDates,
   getUserProgress,
+  getWeeklyPlan,
   getXpBonusTotal,
 } from "@/lib/data";
 import { familyLevel, levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
+import { getTodayDayOfWeek, getWeekStart } from "@/lib/week";
 
 export const metadata = { title: "Dashboard — Calisthenics RPG" };
 
@@ -26,7 +28,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const [familiesWithExercises, progress, recentSessions, allSessions, bonusXp, restDayDates] =
+  const [familiesWithExercises, progress, recentSessions, allSessions, bonusXp, restDayDates, plan] =
     await Promise.all([
       getFamiliesWithExercises(),
       getUserProgress(user.id),
@@ -34,7 +36,15 @@ export default async function DashboardPage() {
       getRecentSessions(user.id, 1000),
       getXpBonusTotal(user.id),
       getRestDayCompletionDates(user.id),
+      getWeeklyPlan(user.id, getWeekStart()),
     ]);
+
+  const todaySession = plan?.sessions.find((s) => s.dayOfWeek === getTodayDayOfWeek());
+  const logButtonLabel = !todaySession
+    ? "Logger une séance"
+    : todaySession.completedAt
+      ? "Séance du jour ✓ terminée"
+      : "Séance du jour";
 
   const streak = computeStreak([...allSessions.map((s) => s.performed_at), ...restDayDates]);
   const progressXp = progress.reduce((sum, p) => sum + p.xpInExercise, 0);
@@ -125,7 +135,7 @@ export default async function DashboardPage() {
         href="/log"
         className="rounded-lg bg-accent px-4 py-3 text-center font-medium text-white hover:bg-accent-strong transition-colors"
       >
-        Logger une séance
+        {logButtonLabel}
       </Link>
     </main>
   );

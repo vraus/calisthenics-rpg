@@ -9,9 +9,9 @@ const LINKS = [
   { href: "/dashboard", label: "Niveau" },
   { href: "/plan", label: "Plan" },
   { href: "/log", label: "Séance" },
-  { href: "/tree", label: "Arbres" },
+  { href: "/tree", label: "Compétences" },
   { href: "/history", label: "Historique" },
-  { href: "/stats", label: "Stats" },
+  { href: "/stats", label: "Profil" },
 ] as const;
 
 const HIDDEN_ON = ["/login", "/auth"];

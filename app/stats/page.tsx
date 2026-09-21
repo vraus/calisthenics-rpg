@@ -3,7 +3,7 @@ import { getRecentSessions, getRestDayCompletionDates, getUserProgress, getXpBon
 import { levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 
-export const metadata = { title: "Stats — Calisthenics RPG" };
+export const metadata = { title: "Profil — Calisthenics RPG" };
 
 interface SessionRow {
   id: string;
@@ -74,7 +74,7 @@ export default async function StatsPage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
-      <h1 className="font-display text-xl font-bold">Stats</h1>
+      <h1 className="font-display text-xl font-bold">Profil</h1>
 
       <section className="panel-rpg p-5 grid grid-cols-2 gap-4">
         <div>
