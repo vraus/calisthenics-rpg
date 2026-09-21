@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { logExercisePerformance, type LogSessionResult } from "@/app/log/actions";
 import { getWeekStart } from "@/lib/week";
 import type { Exercise } from "@/lib/types";
@@ -25,15 +26,13 @@ export interface CreatePlanResult {
  */
 export async function deleteWeeklyPlan(weekStart: string): Promise<CreatePlanResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const { data, error } = await supabase
     .from("weekly_plans")
     .delete()
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("week_start", weekStart)
     .select("id");
 
@@ -69,10 +68,8 @@ export async function saveWeeklyPlanDays(
   formData: FormData
 ): Promise<CreatePlanResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   let days: DayInput[];
   try {
@@ -93,7 +90,7 @@ export async function saveWeeklyPlanDays(
   const { data: existingPlan } = await supabase
     .from("weekly_plans")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("week_start", weekStart)
     .maybeSingle();
 
@@ -102,7 +99,7 @@ export async function saveWeeklyPlanDays(
   } else {
     const { data: newPlan, error: planError } = await supabase
       .from("weekly_plans")
-      .insert({ user_id: user.id, week_start: weekStart })
+      .insert({ user_id: userId, week_start: weekStart })
       .select("id")
       .single();
     if (planError || !newPlan) return { ok: false, error: "Échec de la création du plan." };
@@ -166,7 +163,7 @@ export async function saveWeeklyPlanDays(
       .from("planned_sessions")
       .insert({
         weekly_plan_id: planId,
-        user_id: user.id,
+        user_id: userId,
         label: day.kind === "rest" ? "Repos" : day.label,
         sort_order: day.dayOfWeek,
         day_of_week: day.dayOfWeek,
@@ -190,7 +187,7 @@ export async function saveWeeklyPlanDays(
           .from("planned_exercises")
           .insert({
             planned_session_id: sessionRow.id,
-            user_id: user.id,
+            user_id: userId,
             exercise_id: exercise.id,
             target_sets: targetSets,
             target_performance: exercise.unlock_threshold,
@@ -205,7 +202,7 @@ export async function saveWeeklyPlanDays(
 
         const setRows = Array.from({ length: targetSets }, (_, k) => ({
           planned_exercise_id: exerciseRow.id,
-          user_id: user.id,
+          user_id: userId,
           set_number: k + 1,
         }));
 
@@ -225,10 +222,8 @@ export async function saveWeeklyPlanDays(
 /** Clones the current week's plan into next week — refuses if next week already has one. */
 export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const currentWeekStart = getWeekStart();
   const nextWeekStart = getWeekStart(new Date(Date.now() + 7 * 86_400_000));
@@ -236,7 +231,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
   const { data: currentPlan } = await supabase
     .from("weekly_plans")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("week_start", currentWeekStart)
     .maybeSingle();
   if (!currentPlan) return { ok: false, error: "Aucun plan à copier pour la semaine courante." };
@@ -244,7 +239,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
   const { data: nextPlanExisting } = await supabase
     .from("weekly_plans")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("week_start", nextWeekStart)
     .maybeSingle();
   if (nextPlanExisting) return { ok: false, error: "Un plan existe déjà pour la semaine prochaine." };
@@ -265,7 +260,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
 
   const { data: newPlan, error: newPlanError } = await supabase
     .from("weekly_plans")
-    .insert({ user_id: user.id, week_start: nextWeekStart })
+    .insert({ user_id: userId, week_start: nextWeekStart })
     .select("id")
     .single();
   if (newPlanError || !newPlan) return { ok: false, error: "Échec de la copie." };
@@ -275,7 +270,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
       .from("planned_sessions")
       .insert({
         weekly_plan_id: newPlan.id,
-        user_id: user.id,
+        user_id: userId,
         label: s.label,
         sort_order: s.sort_order,
         day_of_week: s.day_of_week,
@@ -291,7 +286,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
         .from("planned_exercises")
         .insert({
           planned_session_id: newSession.id,
-          user_id: user.id,
+          user_id: userId,
           exercise_id: ex.exercise_id,
           target_sets: ex.target_sets,
           target_performance: ex.target_performance,
@@ -303,7 +298,7 @@ export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
 
       const setRows = Array.from({ length: ex.target_sets }, (_, k) => ({
         planned_exercise_id: newEx.id,
-        user_id: user.id,
+        user_id: userId,
         set_number: k + 1,
       }));
       const { error: setsError } = await supabase.from("planned_sets").insert(setRows);
@@ -369,16 +364,14 @@ export interface ValidateSetResult extends LogSessionResult {
 /** Validates one planned set: logs sets=1 at the exercise's target performance. */
 export async function validateSet(plannedSetId: string): Promise<ValidateSetResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const { data: setRow, error: setError } = await supabase
     .from("planned_sets")
     .select("id, planned_exercise_id, done_at")
     .eq("id", plannedSetId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (setError || !setRow) return { ok: false, error: "Série introuvable." };
@@ -400,7 +393,7 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
       ? { repsPerSet: plannedExercise.target_performance }
       : { durationSeconds: plannedExercise.target_performance };
 
-  const result = await logExercisePerformance(supabase, user.id, exercise, 1, performance);
+  const result = await logExercisePerformance(supabase, userId, exercise, 1, performance);
   if (!result.ok) return result;
 
   await supabase
@@ -415,16 +408,14 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
 /** Shortcut: validates every remaining set of an exercise in one go. */
 export async function validateRemainingSets(plannedExerciseId: string): Promise<ValidateSetResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const { data: plannedExercise, error: plannedExError } = await supabase
     .from("planned_exercises")
     .select("id, planned_session_id, exercise_id, target_performance")
     .eq("id", plannedExerciseId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (plannedExError || !plannedExercise) return { ok: false, error: "Exercice planifié introuvable." };
@@ -450,7 +441,7 @@ export async function validateRemainingSets(plannedExerciseId: string): Promise<
 
   const result = await logExercisePerformance(
     supabase,
-    user.id,
+    userId,
     exercise,
     remainingSets.length,
     performance
@@ -489,16 +480,14 @@ export interface FinalizeResult {
 /** User-triggered "Terminer la séance" — works at any completion level (training days only). */
 export async function finalizePlannedSession(plannedSessionId: string): Promise<FinalizeResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const { data: sessionRow } = await supabase
     .from("planned_sessions")
     .select("id")
     .eq("id", plannedSessionId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (!sessionRow) return { ok: false, error: "Séance planifiée introuvable." };
@@ -509,16 +498,14 @@ export async function finalizePlannedSession(plannedSessionId: string): Promise<
 /** For a rest day: marks it done and grants the flat rest-day XP bonus. */
 export async function markRestDayDone(plannedSessionId: string): Promise<FinalizeResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Non connecté." };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const { data: sessionRow } = await supabase
     .from("planned_sessions")
     .select("id, is_rest_day")
     .eq("id", plannedSessionId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (!sessionRow) return { ok: false, error: "Jour introuvable." };

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getFamiliesWithExercises, getUserProgress } from "@/lib/data";
 import { buildFamilyTree } from "@/lib/xp";
 import LogForm from "../log-form";
@@ -6,14 +6,11 @@ import LogForm from "../log-form";
 export const metadata = { title: "Log libre — Calisthenics RPG" };
 
 export default async function LogLibrePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
   const [familiesWithExercises, progress] = await Promise.all([
     getFamiliesWithExercises(),
-    user ? getUserProgress(user.id) : Promise.resolve([]),
+    userId ? getUserProgress(userId) : Promise.resolve([]),
   ]);
 
   const groups = familiesWithExercises.map(({ family, exercises }) => ({

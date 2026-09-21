@@ -1,16 +1,13 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getAllProfilesWithLevel } from "@/lib/data";
 
 export const metadata = { title: "Annuaire — Calisthenics RPG" };
 
 export default async function AnnuairePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour voir l&apos;annuaire.</p>
@@ -36,7 +33,7 @@ export default async function AnnuairePage() {
             >
               <span className="font-medium text-sm">
                 {p.username}
-                {p.userId === user.id ? <span className="text-muted"> (toi)</span> : null}
+                {p.userId === userId ? <span className="text-muted"> (toi)</span> : null}
               </span>
               <span className="text-sm text-muted">niveau {p.level}</span>
             </Link>

@@ -24,6 +24,9 @@ export default function SessionRunner({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [doneSetIds, setDoneSetIds] = useState<Set<string>>(
+    () => new Set(session.exercises.flatMap((ex) => ex.sets.filter((s) => s.doneAt).map((s) => s.id)))
+  );
   const [xpTotal, setXpTotal] = useState(initialSummary?.xpEarned ?? 0);
   const [badges, setBadges] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +62,9 @@ export default function SessionRunner({
     setError(null);
     startTransition(async () => {
       const result = await validateSet(plannedSetId);
+      if (result.ok) {
+        setDoneSetIds((prev) => new Set(prev).add(plannedSetId));
+      }
       applyResult(result);
       setPendingId(null);
     });
@@ -67,8 +73,17 @@ export default function SessionRunner({
   function handleExercise(plannedExerciseId: string) {
     setPendingId(plannedExerciseId);
     setError(null);
+    const exercise = session.exercises.find((ex) => ex.id === plannedExerciseId);
+    const remainingSetIds = exercise?.sets.filter((s) => !s.doneAt).map((s) => s.id) ?? [];
     startTransition(async () => {
       const result = await validateRemainingSets(plannedExerciseId);
+      if (result.ok) {
+        setDoneSetIds((prev) => {
+          const next = new Set(prev);
+          for (const id of remainingSetIds) next.add(id);
+          return next;
+        });
+      }
       applyResult(result);
       setPendingId(null);
     });
@@ -88,7 +103,6 @@ export default function SessionRunner({
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
       celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
-      router.refresh();
     });
   }
 
@@ -106,7 +120,6 @@ export default function SessionRunner({
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
       celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
-      router.refresh();
     });
   }
 
@@ -143,7 +156,6 @@ export default function SessionRunner({
     } else {
       fireConfettiBurst();
     }
-    router.refresh();
   }
 
   if (session.isRestDay) {
@@ -151,7 +163,7 @@ export default function SessionRunner({
       return (
         <div
           className={`panel-rpg panel-rpg-gold p-6 text-center flex flex-col gap-2 ${
-            finalized.fullCompletion ? "animate-celebrate" : ""
+            finalized.fullCompletion ? "animate-celebrate-in" : ""
           }`}
         >
           <p className="font-display text-2xl font-bold text-gold">Jour de repos terminé.</p>
@@ -194,7 +206,7 @@ export default function SessionRunner({
     return (
       <div
         className={`panel-rpg panel-rpg-gold p-6 text-center flex flex-col gap-2 ${
-          finalized.fullCompletion ? "animate-celebrate" : ""
+          finalized.fullCompletion ? "animate-celebrate-in" : ""
         }`}
       >
         <p className="font-display text-2xl font-bold text-gold">
@@ -224,7 +236,7 @@ export default function SessionRunner({
   return (
     <div className="flex flex-col gap-4">
       {session.exercises.map((exercise) => {
-        const remaining = exercise.sets.filter((s) => !s.doneAt).length;
+        const remaining = exercise.sets.filter((s) => !doneSetIds.has(s.id)).length;
         return (
           <div key={exercise.id} className="panel-rpg p-4 flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -235,21 +247,24 @@ export default function SessionRunner({
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {exercise.sets.map((set) => (
-                <button
-                  key={set.id}
-                  type="button"
-                  disabled={Boolean(set.doneAt) || (isPending && pendingId === set.id)}
-                  onClick={() => handleSet(set.id)}
-                  className={`h-10 w-10 rounded-lg border text-sm font-medium transition-all ${PRESS_EFFECT} ${
-                    set.doneAt
-                      ? "border-gold bg-locked text-gold"
-                      : "border-border text-foreground hover:border-accent"
-                  }`}
-                >
-                  {set.doneAt ? "✓" : set.setNumber}
-                </button>
-              ))}
+              {exercise.sets.map((set) => {
+                const done = doneSetIds.has(set.id);
+                return (
+                  <button
+                    key={set.id}
+                    type="button"
+                    disabled={done || (isPending && pendingId === set.id)}
+                    onClick={() => handleSet(set.id)}
+                    className={`h-10 w-10 rounded-lg border text-sm font-medium transition-all ${PRESS_EFFECT} ${
+                      done
+                        ? "border-gold bg-locked text-gold"
+                        : "border-border text-foreground hover:border-accent"
+                    }`}
+                  >
+                    {done ? "✓" : set.setNumber}
+                  </button>
+                );
+              })}
             </div>
             {remaining > 1 ? (
               <button

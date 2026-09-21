@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getExercisesByFamilySlug, getUserProgress } from "@/lib/data";
 import { buildFamilyTree, familyLevel } from "@/lib/xp";
 
@@ -14,12 +14,9 @@ export default async function FamilyTreePage({
   if (!result) notFound();
   const { family, exercises } = result;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  const progress = user ? await getUserProgress(user.id) : [];
+  const progress = userId ? await getUserProgress(userId) : [];
   const nodes = buildFamilyTree(exercises, progress);
   const level = familyLevel(nodes);
 

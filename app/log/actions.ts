@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getAllExercises, getFamilies, getRecentSessions, getRestDayCompletionDates } from "@/lib/data";
 import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
@@ -217,12 +218,9 @@ export async function logExercisePerformance(
  */
 export async function logSession(formData: FormData): Promise<LogSessionResult> {
   const supabase = await createClient();
+  const userId = await getAuthenticatedUserId();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!userId) {
     return { ok: false, error: "Non connecté." };
   }
 
@@ -256,7 +254,7 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
     xpCoefficient: Number(exerciseRow.xp_coefficient),
   };
 
-  return logExercisePerformance(supabase, user.id, exercise, sets, {
+  return logExercisePerformance(supabase, userId, exercise, sets, {
     repsPerSet: repsRaw ? Number(repsRaw) : undefined,
     durationSeconds: durationRaw ? Number(durationRaw) : undefined,
   });

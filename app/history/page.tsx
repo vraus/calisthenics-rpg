@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getRecentSessions } from "@/lib/data";
 
 export const metadata = { title: "Historique — Calisthenics RPG" };
@@ -13,12 +13,9 @@ function formatDate(iso: string) {
 }
 
 export default async function HistoryPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour voir ton historique.</p>
@@ -26,7 +23,7 @@ export default async function HistoryPage() {
     );
   }
 
-  const sessions = await getRecentSessions(user.id, 100);
+  const sessions = await getRecentSessions(userId, 100);
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">

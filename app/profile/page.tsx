@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserEmail, getAuthenticatedUserId } from "@/lib/auth";
 import {
   ensureProfile,
   getFamiliesWithExercises,
@@ -34,11 +35,10 @@ interface Badge {
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
+  const userEmail = await getAuthenticatedUserEmail();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour voir ton profil.</p>
@@ -46,18 +46,18 @@ export default async function ProfilePage() {
     );
   }
 
-  await ensureProfile(supabase, user.id, user.email);
+  await ensureProfile(supabase, userId, userEmail);
 
   const [profile, familiesWithExercises, progress, sessions, badgesResult, earnedResult, bonusXp, restDayDates] =
     await Promise.all([
-      getProfile(user.id),
+      getProfile(userId),
       getFamiliesWithExercises(),
-      getUserProgress(user.id),
-      getRecentSessions(user.id, 1000) as Promise<SessionRow[]>,
+      getUserProgress(userId),
+      getRecentSessions(userId, 1000) as Promise<SessionRow[]>,
       supabase.from("badges").select("slug, name, description, sort_order").order("sort_order"),
-      supabase.from("user_badges").select("earned_at, badges(slug)").eq("user_id", user.id),
-      getXpBonusTotal(user.id),
-      getRestDayCompletionDates(user.id),
+      supabase.from("user_badges").select("earned_at, badges(slug)").eq("user_id", userId),
+      getXpBonusTotal(userId),
+      getRestDayCompletionDates(userId),
     ]);
 
   const badges: Badge[] = badgesResult.data ?? [];

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import {
   getFamiliesWithExercises,
   getRecentSessions,
@@ -15,12 +15,9 @@ import { getTodayDayOfWeek, getWeekStart } from "@/lib/week";
 export const metadata = { title: "Dashboard — Calisthenics RPG" };
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour voir ton niveau.</p>
@@ -31,12 +28,12 @@ export default async function DashboardPage() {
   const [familiesWithExercises, progress, recentSessions, allSessions, bonusXp, restDayDates, plan] =
     await Promise.all([
       getFamiliesWithExercises(),
-      getUserProgress(user.id),
-      getRecentSessions(user.id, 5),
-      getRecentSessions(user.id, 1000),
-      getXpBonusTotal(user.id),
-      getRestDayCompletionDates(user.id),
-      getWeeklyPlan(user.id, getWeekStart()),
+      getUserProgress(userId),
+      getRecentSessions(userId, 5),
+      getRecentSessions(userId, 1000),
+      getXpBonusTotal(userId),
+      getRestDayCompletionDates(userId),
+      getWeeklyPlan(userId, getWeekStart()),
     ]);
 
   const todaySession = plan?.sessions.find((s) => s.dayOfWeek === getTodayDayOfWeek());

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import {
   getFamiliesWithExercises,
   getPlannedSessionXpSummary,
@@ -14,12 +14,9 @@ import SessionRunner from "../plan/session-runner";
 export const metadata = { title: "Séance — Calisthenics RPG" };
 
 export default async function LogPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour voir ta séance.</p>
@@ -27,12 +24,12 @@ export default async function LogPage() {
     );
   }
 
-  const plan = await getWeeklyPlan(user.id, getWeekStart());
+  const plan = await getWeeklyPlan(userId, getWeekStart());
   const todaySession = plan?.sessions.find((s) => s.dayOfWeek === getTodayDayOfWeek());
 
   if (todaySession) {
     const initialSummary = todaySession.completedAt
-      ? await getPlannedSessionXpSummary(user.id, todaySession.id)
+      ? await getPlannedSessionXpSummary(userId, todaySession.id)
       : undefined;
 
     return (
@@ -50,7 +47,7 @@ export default async function LogPage() {
 
   const [familiesWithExercises, progress] = await Promise.all([
     getFamiliesWithExercises(),
-    getUserProgress(user.id),
+    getUserProgress(userId),
   ]);
 
   const groups = familiesWithExercises.map(({ family, exercises }) => ({

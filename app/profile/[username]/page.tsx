@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import {
   getFamiliesWithExercises,
   getProfileByUsername,
@@ -32,10 +33,8 @@ export default async function PublicProfilePage({
   const { username } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) notFound();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) notFound();
 
   const profile = await getProfileByUsername(username);
   if (!profile) notFound();

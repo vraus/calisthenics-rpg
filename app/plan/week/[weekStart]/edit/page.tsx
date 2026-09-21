@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getFamiliesWithExercises, getWeeklyPlan } from "@/lib/data";
 import WeekEditor from "./week-editor";
 import DeleteWeekButton from "./delete-week-button";
@@ -19,12 +19,9 @@ export default async function EditWeekPage({
 }) {
   const { weekStart } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour planifier ta semaine.</p>
@@ -34,7 +31,7 @@ export default async function EditWeekPage({
 
   const [familiesWithExercises, plan] = await Promise.all([
     getFamiliesWithExercises(),
-    getWeeklyPlan(user.id, weekStart),
+    getWeeklyPlan(userId, weekStart),
   ]);
 
   return (

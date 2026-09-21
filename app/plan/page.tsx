@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import { getPlannedWeekStarts, getWeeklyPlan } from "@/lib/data";
 import { addWeeks, getWeekStart } from "@/lib/week";
 import { DAY_LABELS, type DayOfWeek, type WeeklyPlan } from "@/lib/types";
@@ -103,12 +103,9 @@ function WeekTile({
 }
 
 export default async function PlanPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) {
+  if (!userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <p className="text-muted text-sm">Connecte-toi pour planifier ta semaine.</p>
@@ -121,7 +118,7 @@ export default async function PlanPage() {
     addWeeks(currentWeekStart, i)
   );
 
-  const plannedSet = await getPlannedWeekStarts(user.id, candidateWeekStarts);
+  const plannedSet = await getPlannedWeekStarts(userId, candidateWeekStarts);
 
   // Show every week up to the last one that actually has a plan, plus one
   // extra "+" slot right after it — so a gap left empty by a deleted week
@@ -136,7 +133,7 @@ export default async function PlanPage() {
     Math.min(lastPlannedIndex + 2, candidateWeekStarts.length)
   );
 
-  const plans = await Promise.all(visibleWeekStarts.map((ws) => getWeeklyPlan(user.id, ws)));
+  const plans = await Promise.all(visibleWeekStarts.map((ws) => getWeeklyPlan(userId, ws)));
 
   const currentPlanned = plannedSet.has(currentWeekStart);
   const nextWeekStart = addWeeks(currentWeekStart, 1);

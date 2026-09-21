@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
 
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,20}$/i;
 
@@ -12,11 +13,9 @@ export interface UpdateUsernameResult {
 
 export async function updateUsername(formData: FormData): Promise<UpdateUsernameResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getAuthenticatedUserId();
 
-  if (!user) return { ok: false, error: "Non connecté." };
+  if (!userId) return { ok: false, error: "Non connecté." };
 
   const username = String(formData.get("username") ?? "").trim();
 
@@ -30,7 +29,7 @@ export async function updateUsername(formData: FormData): Promise<UpdateUsername
   const { error } = await supabase
     .from("profiles")
     .update({ username })
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
   if (error) {
     if (error.code === "23505") {
