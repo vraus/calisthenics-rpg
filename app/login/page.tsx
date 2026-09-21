@@ -80,7 +80,7 @@ export default function LoginPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-foreground mb-1">
+        <h1 className="font-display text-2xl font-bold text-accent-strong mb-1">
           Calisthenics RPG
         </h1>
         <p className="text-sm text-muted mb-8">Connecte-toi pour continuer.</p>
@@ -145,7 +145,7 @@ export default function LoginPage() {
         ) : mode === "reset" ? (
           <div className="flex flex-col gap-4">
             {resetStatus === "sent" ? (
-              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
+              <p className="panel-rpg p-4 text-sm text-foreground">
                 Si un compte existe pour {resetEmail}, un email vient d&apos;être
                 envoyé avec un lien pour définir ton mot de passe.
               </p>
@@ -182,7 +182,7 @@ export default function LoginPage() {
         ) : (
           <div className="flex flex-col gap-4">
             {signupStatus === "sent" ? (
-              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
+              <p className="panel-rpg p-4 text-sm text-foreground">
                 Compte créé. Vérifie ta boîte mail pour l&apos;activer, puis
                 connecte-toi.
               </p>

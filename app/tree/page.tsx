@@ -16,7 +16,7 @@ export default async function TreeIndexPage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
-      <h1 className="text-xl font-semibold mb-2">Arbres de compétences</h1>
+      <h1 className="font-display text-xl font-bold mb-2">Arbres de compétences</h1>
 
       {familiesWithExercises.map(({ family, exercises }) => {
         const nodes = buildFamilyTree(exercises, progress);
@@ -27,7 +27,7 @@ export default async function TreeIndexPage() {
           <Link
             key={family.id}
             href={`/tree/${family.slug}`}
-            className="rounded-lg border border-border bg-surface p-4 flex items-center justify-between hover:border-accent transition-colors"
+            className="panel-rpg p-4 flex items-center justify-between hover:border-accent transition-colors"
           >
             <div>
               <p className="font-medium">{family.name}</p>

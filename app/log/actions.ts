@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAllExercises, getFamilies, getRecentSessions, getUserProgress } from "@/lib/data";
+import { getAllExercises, getFamilies, getRecentSessions } from "@/lib/data";
 import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import { evaluateNewBadges, type BadgeContext } from "@/lib/badges";
-import type { Exercise } from "@/lib/types";
+import type { Exercise, UserProgress } from "@/lib/types";
 
 export interface LogSessionResult {
   ok: boolean;
@@ -14,22 +14,26 @@ export interface LogSessionResult {
   xpEarned?: number;
   justMastered?: boolean;
   newBadgeNames?: string[];
+  leveledUp?: boolean;
+  newLevel?: number;
 }
 
 /**
- * Assembles the badge context from already-fetched data and persists any
- * newly-earned badges. Never throws: a badge-evaluation hiccup shouldn't
- * fail the session that was already successfully logged.
+ * Assembles the badge context from already-fetched progress and persists
+ * any newly-earned badges. Takes `progress` (post-session) as a param
+ * rather than re-fetching, since the caller already needs it for the
+ * level-up check. Never throws: a badge-evaluation hiccup shouldn't fail
+ * the session that was already successfully logged.
  */
 async function awardNewBadges(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
+  userId: string,
+  progress: UserProgress[]
 ): Promise<string[]> {
   try {
-    const [families, exercises, progress, sessions, earnedRows] = await Promise.all([
+    const [families, exercises, sessions, earnedRows] = await Promise.all([
       getFamilies(),
       getAllExercises(),
-      getUserProgress(userId),
       getRecentSessions(userId, 1000),
       supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
     ]);
@@ -154,6 +158,16 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
 
   const justMastered = meetsUnlockThreshold(session, exercise);
 
+  const { data: progressBefore } = await supabase
+    .from("user_progress")
+    .select("user_id, exercise_id, xp_in_exercise, mastered, mastered_at")
+    .eq("user_id", user.id);
+
+  const beforeLevel = globalLevel(
+    (progressBefore ?? []).map((p) => ({ xpInExercise: Number(p.xp_in_exercise) }))
+  ).level;
+  const existingProgress = (progressBefore ?? []).find((p) => p.exercise_id === exercise.id);
+
   const { error: insertError } = await supabase.from("sessions").insert({
     user_id: user.id,
     exercise_id: exercise.id,
@@ -166,13 +180,6 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
   if (insertError) {
     return { ok: false, error: "Échec de l'enregistrement de la séance." };
   }
-
-  const { data: existingProgress } = await supabase
-    .from("user_progress")
-    .select("xp_in_exercise, mastered")
-    .eq("user_id", user.id)
-    .eq("exercise_id", exercise.id)
-    .maybeSingle();
 
   const newXp = (existingProgress ? Number(existingProgress.xp_in_exercise) : 0) + xpEarned;
   const newMastered = existingProgress?.mastered || justMastered;
@@ -193,7 +200,24 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
     return { ok: false, error: "Échec de la mise à jour de la progression." };
   }
 
-  const newBadgeNames = await awardNewBadges(supabase, user.id);
+  const progressAfter: UserProgress[] = (progressBefore ?? [])
+    .filter((p) => p.exercise_id !== exercise.id)
+    .map((p) => ({
+      userId: p.user_id,
+      exerciseId: p.exercise_id,
+      xpInExercise: Number(p.xp_in_exercise),
+      mastered: p.mastered,
+      masteredAt: p.mastered_at ?? undefined,
+    }));
+  progressAfter.push({
+    userId: user.id,
+    exerciseId: exercise.id,
+    xpInExercise: newXp,
+    mastered: newMastered,
+  });
+
+  const afterLevel = globalLevel(progressAfter).level;
+  const newBadgeNames = await awardNewBadges(supabase, user.id, progressAfter);
 
   revalidatePath("/dashboard");
   revalidatePath("/tree");
@@ -205,5 +229,7 @@ export async function logSession(formData: FormData): Promise<LogSessionResult> 
     xpEarned,
     justMastered: justMastered && !existingProgress?.mastered,
     newBadgeNames: newBadgeNames.length > 0 ? newBadgeNames : undefined,
+    leveledUp: afterLevel > beforeLevel,
+    newLevel: afterLevel > beforeLevel ? afterLevel : undefined,
   };
 }

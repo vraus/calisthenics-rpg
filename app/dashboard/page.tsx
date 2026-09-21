@@ -35,14 +35,14 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
-      <section className="rounded-xl border border-border bg-surface p-5">
+      <section className="panel-rpg p-5">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-muted">Niveau global</p>
-            <p className="text-4xl font-bold text-accent-strong">{global.level}</p>
+            <p className="font-display text-4xl font-bold text-accent-strong">{global.level}</p>
           </div>
           {streak.current > 0 ? (
-            <p className="text-sm font-medium text-accent-strong">
+            <p className="text-sm font-medium text-gold">
               {streak.current} 🔥
             </p>
           ) : null}
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
               <Link
                 key={family.id}
                 href={`/tree/${family.slug}`}
-                className="rounded-lg border border-border bg-surface p-3 flex items-center justify-between hover:border-accent transition-colors"
+                className="panel-rpg p-3 flex items-center justify-between hover:border-accent transition-colors"
               >
                 <span className="font-medium text-sm">{family.name}</span>
                 <span className="text-sm text-muted">niveau {level.level}</span>
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
               return (
                 <li
                   key={s.id}
-                  className="rounded-lg border border-border bg-surface p-3 flex items-center justify-between text-sm"
+                  className="panel-rpg p-3 flex items-center justify-between text-sm"
                 >
                   <span>{exerciseName}</span>
                   <span className="text-muted">+{s.xp_earned} XP</span>

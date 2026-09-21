@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f0a1a;
-  --foreground: #f4f0fb;
-  --surface: #1c1330;
-  --surface-alt: #241a3d;
-  --border: #3a2a5c;
-  --accent: #7c3aed;
-  --accent-strong: #a855f7;
+  /* "Cuir & bronze" — v1 of the fantasy palette, still being iterated on. */
+  --background: #17120c;
+  --foreground: #f3e9d8;
+  --surface: #241c12;
+  --surface-alt: #2c2216;
+  --border: #4a3820;
+  --accent: #8b5a2b;
+  --accent-strong: #c9853f;
   --bordeaux: #7f1d3d;
-  --muted: #a394c2;
-  --locked: #2a2140;
+  --muted: #b8a888;
+  --locked: #2a2014;
+  /* Reserved for reward moments (badge earned, exercise mastered, level-up)
+     — distinct from --accent, which stays for ordinary interactive UI. */
+  --gold: #d4af37;
+  --gold-glow: rgba(212, 175, 55, 0.35);
 }
 
 @theme inline {
@@ -24,6 +29,8 @@
   --color-bordeaux: var(--bordeaux);
   --color-muted: var(--muted);
   --color-locked: var(--locked);
+  --color-gold: var(--gold);
+  --font-display: var(--font-display-family, inherit);
 }
 
 body {
@@ -31,4 +38,46 @@ body {
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
+}
+
+/* Shared card treatment — one place to evolve the "game panel" look instead
+   of repeating `rounded-xl border border-border bg-surface` in every page. */
+.panel-rpg {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-alt) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.panel-rpg-gold {
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 12px var(--gold-glow);
+}
+
+@keyframes level-up-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  25% {
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+
+.animate-level-up {
+  animation: level-up-pop 2.5s ease-out forwards;
 }

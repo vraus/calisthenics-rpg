@@ -26,7 +26,7 @@ export default async function FamilyTreePage({
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
       <div>
-        <h1 className="text-xl font-semibold">{family.name}</h1>
+        <h1 className="font-display text-xl font-bold">{family.name}</h1>
         <p className="text-sm text-muted">
           Niveau {level.level} · {level.xpIntoLevel}/
           {level.xpIntoLevel + level.xpToNextLevel} XP avant le niveau suivant
@@ -44,12 +44,12 @@ export default async function FamilyTreePage({
           return (
             <li
               key={node.id}
-              className={`rounded-lg border p-4 flex items-center gap-3 ${
+              className={`p-4 flex items-center gap-3 ${
                 state === "locked"
-                  ? "border-border bg-locked text-muted"
+                  ? "rounded-lg border border-border bg-locked text-muted"
                   : state === "mastered"
-                    ? "border-accent-strong bg-surface-alt"
-                    : "border-border bg-surface"
+                    ? "panel-rpg panel-rpg-gold"
+                    : "panel-rpg"
               }`}
             >
               <span className="text-xs w-6 text-center font-mono text-muted">
@@ -66,7 +66,7 @@ export default async function FamilyTreePage({
                 </p>
               </div>
               {state === "mastered" ? (
-                <span className="text-accent-strong text-sm font-medium">✓</span>
+                <span className="text-gold text-sm font-medium">✓</span>
               ) : null}
             </li>
           );

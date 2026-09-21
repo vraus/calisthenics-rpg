@@ -30,7 +30,7 @@ export default async function HistoryPage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
-      <h1 className="text-xl font-semibold">Historique des séances</h1>
+      <h1 className="font-display text-xl font-bold">Historique des séances</h1>
 
       {sessions.length === 0 ? (
         <p className="text-sm text-muted">Aucune séance enregistrée pour l&apos;instant.</p>
@@ -48,7 +48,7 @@ export default async function HistoryPage() {
             return (
               <li
                 key={s.id}
-                className="rounded-lg border border-border bg-surface p-3 flex items-center justify-between text-sm"
+                className="panel-rpg p-3 flex items-center justify-between text-sm"
               >
                 <div>
                   <p className="font-medium">{exerciseName}</p>

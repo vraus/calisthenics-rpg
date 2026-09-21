@@ -71,25 +71,25 @@ export default async function StatsPage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
-      <h1 className="text-xl font-semibold">Stats</h1>
+      <h1 className="font-display text-xl font-bold">Stats</h1>
 
-      <section className="rounded-xl border border-border bg-surface p-5 grid grid-cols-2 gap-4">
+      <section className="panel-rpg p-5 grid grid-cols-2 gap-4">
         <div>
           <p className="text-sm text-muted">Niveau global</p>
-          <p className="text-2xl font-bold text-accent-strong">{global.level}</p>
+          <p className="font-display text-2xl font-bold text-accent-strong">{global.level}</p>
         </div>
         <div>
           <p className="text-sm text-muted">Séances loggées</p>
-          <p className="text-2xl font-bold text-accent-strong">{sessions.length}</p>
+          <p className="font-display text-2xl font-bold text-accent-strong">{sessions.length}</p>
         </div>
         <div>
           <p className="text-sm text-muted">XP total</p>
-          <p className="text-2xl font-bold text-accent-strong">{Math.round(totalXp)}</p>
+          <p className="font-display text-2xl font-bold text-accent-strong">{Math.round(totalXp)}</p>
         </div>
         <div>
           <p className="text-sm text-muted">Streak</p>
-          <p className="text-2xl font-bold text-accent-strong">
-            {streak.current} 🔥 <span className="text-sm text-muted">(record {streak.longest})</span>
+          <p className="font-display text-2xl font-bold text-gold">
+            {streak.current} 🔥 <span className="font-sans text-sm text-muted">(record {streak.longest})</span>
           </p>
         </div>
       </section>
@@ -103,10 +103,10 @@ export default async function StatsPage() {
             {[...bestByExercise.entries()].map(([name, record]) => (
               <li
                 key={name}
-                className="rounded-lg border border-border bg-surface p-3 flex items-center justify-between text-sm"
+                className="panel-rpg p-3 flex items-center justify-between text-sm"
               >
                 <span>{name}</span>
-                <span className="text-accent-strong font-medium">
+                <span className="text-gold font-medium">
                   {record.value} {record.unit}
                 </span>
               </li>
@@ -123,10 +123,10 @@ export default async function StatsPage() {
             return (
               <li
                 key={badge.slug}
-                className={`rounded-lg border p-3 flex items-center justify-between gap-3 ${
+                className={`p-3 flex items-center justify-between gap-3 ${
                   earnedAt
-                    ? "border-accent-strong bg-surface-alt"
-                    : "border-border bg-locked text-muted"
+                    ? "panel-rpg panel-rpg-gold"
+                    : "rounded-lg border border-border bg-locked text-muted"
                 }`}
               >
                 <div>
@@ -134,7 +134,7 @@ export default async function StatsPage() {
                   <p className="text-xs">{badge.description}</p>
                 </div>
                 {earnedAt ? (
-                  <span className="text-accent-strong text-sm font-medium">✓</span>
+                  <span className="text-gold text-sm font-medium">✓</span>
                 ) : null}
               </li>
             );

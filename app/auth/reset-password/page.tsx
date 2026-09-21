@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-foreground mb-1">
+        <h1 className="font-display text-2xl font-bold text-foreground mb-1">
           Nouveau mot de passe
         </h1>
         <p className="text-sm text-muted mb-8">
