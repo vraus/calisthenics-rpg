@@ -1,8 +1,8 @@
--- Calisthenics RPG — policies RLS manquantes pour la suppression de plan
+-- Calisthenics RPG - policies RLS manquantes pour la suppression de plan
 -- 0003_planning.sql n'avait que select/insert/update sur weekly_plans et
 -- les tables enfants : sans policy "delete", Supabase bloquait
 -- silencieusement toute suppression (0 ligne affectée, aucune erreur
--- renvoyée) — d'où le bouton "Supprimer cette semaine" qui semblait
+-- renvoyée) - d'où le bouton "Supprimer cette semaine" qui semblait
 -- fonctionner mais ne supprimait rien.
 
 create policy "users delete their own weekly plans"

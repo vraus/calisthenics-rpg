@@ -10,7 +10,7 @@ function formatDateTime(iso: string) {
   });
 }
 
-/** Shared "séance" detail rendering — grouped by exercise, one chip per série réellement faite. */
+/** Shared "séance" detail rendering - grouped by exercise, one chip per série réellement faite. */
 export function SessionDetailView({
   title,
   subtitle,

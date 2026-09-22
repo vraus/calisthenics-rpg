@@ -21,7 +21,7 @@ export interface ExerciseFamily {
 
 /**
  * Un noeud de l'arbre de compétences (familyId + tier renseignés), OU un
- * mouvement de circuit sans progression technique (familyId/tier absents —
+ * mouvement de circuit sans progression technique (familyId/tier absents -
  * ex. burpee, jumping jack), OU la variante d'un autre exercice de circuit
  * (variantOfId renseigné, ex. "Burpee sans pompes").
  */
@@ -77,7 +77,7 @@ export interface PlannedExercise {
    * Index de la partie explicite à laquelle cet exercice appartient (voir
    * PlannedSession.parts), ou `undefined` s'il appartient à la partie
    * implicite unique de la séance (utilisant PlannedSession.rounds/
-   * restBetweenRoundsSeconds) — distinct de 0, qui est un index de partie
+   * restBetweenRoundsSeconds) - distinct de 0, qui est un index de partie
    * explicite valide (première partie d'un circuit à plusieurs parties).
    */
   partIndex?: number;
@@ -91,7 +91,7 @@ export interface PlannedSessionPart {
   label?: string;
   rounds: number;
   restBetweenRoundsSeconds: number;
-  /** Circuit d'origine, si cette partie vient d'un "+ Ajouter un circuit" — undefined si construite à la main. */
+  /** Circuit d'origine, si cette partie vient d'un "+ Ajouter un circuit" - undefined si construite à la main. */
   sessionTemplateId?: string;
 }
 
@@ -100,7 +100,7 @@ export type DayKind = "rest" | "session";
 /**
  * A reusable, pre-filled exercise circuit (e.g. "HIIT") that a "session" day
  * can be built from in the week editor, as an alternative to a "Custom" day
- * built from scratch. Not a day_kind of its own — just a starting point.
+ * built from scratch. Not a day_kind of its own - just a starting point.
  */
 export interface SessionTemplateExercise {
   id: string;
@@ -113,7 +113,7 @@ export interface SessionTemplateExercise {
   targetPerformance: number;
   restBetweenSetsSeconds: number;
   restAfterExerciseSeconds: number;
-  /** Index de la partie à laquelle appartient cet exercice — voir SessionTemplatePart. */
+  /** Index de la partie à laquelle appartient cet exercice - voir SessionTemplatePart. */
   partIndex: number;
 }
 
@@ -133,7 +133,7 @@ export interface SessionTemplate {
   phaseId?: string;
   /** Parties du circuit (p1/p2...), chacune avec son nombre de tours/pause. La plupart des circuits n'en ont qu'une. */
   parts: SessionTemplatePart[];
-  /** Vue à plat de tous les exercices, triés par (partIndex, sortOrder) — pratique pour l'affichage simple actuel. */
+  /** Vue à plat de tous les exercices, triés par (partIndex, sortOrder) - pratique pour l'affichage simple actuel. */
   exercises: SessionTemplateExercise[];
 }
 

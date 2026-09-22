@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { evaluateNewBadges, type BadgeContext } from "./badges";
+import {
+  buildFamilyBadgeDefinitions,
+  buildPhaseBadgeDefinitions,
+  evaluateNewBadges,
+  familyMasteryBadgeSlug,
+  phaseCompleteBadgeSlug,
+  type BadgeContext,
+} from "./badges";
 
 function baseContext(overrides: Partial<BadgeContext> = {}): BadgeContext {
   return {
@@ -9,6 +16,7 @@ function baseContext(overrides: Partial<BadgeContext> = {}): BadgeContext {
     masteredExerciseSlugs: new Set(),
     masteredSlugsByFamily: {},
     totalExercisesByFamily: {},
+    completedPhaseSlugs: new Set(),
     ...overrides,
   };
 }
@@ -57,20 +65,44 @@ describe("evaluateNewBadges", () => {
     });
     expect(evaluateNewBadges(ctxComplete, new Set())).toContain("touche-a-tout");
   });
+});
 
-  it("unlocks jambes-de-fer only once every leg exercise is mastered", () => {
-    const ctx = baseContext({
+describe("buildFamilyBadgeDefinitions", () => {
+  it("unlocks a family's mastery badge only once every level of it is mastered", () => {
+    const defs = buildFamilyBadgeDefinitions(["jambes"]);
+    const slug = familyMasteryBadgeSlug("jambes");
+
+    const partial = baseContext({
       totalExercisesByFamily: { jambes: 2 },
       masteredSlugsByFamily: { jambes: new Set(["squats-corps-de-poids"]) },
     });
-    expect(evaluateNewBadges(ctx, new Set())).not.toContain("jambes-de-fer");
+    expect(evaluateNewBadges(partial, new Set(), defs)).not.toContain(slug);
 
-    const ctxComplete = baseContext({
+    const complete = baseContext({
       totalExercisesByFamily: { jambes: 2 },
-      masteredSlugsByFamily: {
-        jambes: new Set(["squats-corps-de-poids", "squats-bulgares"]),
-      },
+      masteredSlugsByFamily: { jambes: new Set(["squats-corps-de-poids", "squats-bulgares"]) },
     });
-    expect(evaluateNewBadges(ctxComplete, new Set())).toContain("jambes-de-fer");
+    expect(evaluateNewBadges(complete, new Set(), defs)).toContain(slug);
+  });
+
+  it("doesn't unlock a badge for a family with no exercises at all", () => {
+    const defs = buildFamilyBadgeDefinitions(["vide"]);
+    expect(evaluateNewBadges(baseContext(), new Set(), defs)).not.toContain(familyMasteryBadgeSlug("vide"));
+  });
+});
+
+describe("buildPhaseBadgeDefinitions", () => {
+  it("unlocks a phase's badge once the player has moved past it", () => {
+    const defs = buildPhaseBadgeDefinitions(["phase-1-fondations"]);
+    const slug = phaseCompleteBadgeSlug("phase-1-fondations");
+
+    expect(evaluateNewBadges(baseContext(), new Set(), defs)).not.toContain(slug);
+    expect(
+      evaluateNewBadges(
+        baseContext({ completedPhaseSlugs: new Set(["phase-1-fondations"]) }),
+        new Set(),
+        defs
+      )
+    ).toContain(slug);
   });
 });

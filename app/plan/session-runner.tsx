@@ -38,7 +38,7 @@ export default function SessionRunner({
   const [xpTotal, setXpTotal] = useState(initialSummary?.xpEarned ?? 0);
   const [badges, setBadges] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // Combien de reps/secondes réellement faites, éditable par exercice —
+  // Combien de reps/secondes réellement faites, éditable par exercice -
   // pré-rempli avec la cible du planning (0 pour un objectif "X MAX", à
   // renseigner soi-même en validant). Partagé par toutes les séries d'un
   // même exercice : la case se réédite entre deux clics si une série
@@ -220,7 +220,7 @@ export default function SessionRunner({
       <div className="panel-rpg p-6 text-center flex flex-col gap-3">
         <p className="font-display text-xl font-bold">Jour de repos</p>
         <p className="text-sm text-muted">
-          Pas de séance aujourd&apos;hui — récupérer fait aussi partie du plan.
+          Pas de séance aujourd&apos;hui - récupérer fait aussi partie du plan.
         </p>
         <button
           type="button"

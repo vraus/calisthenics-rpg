@@ -1,4 +1,4 @@
--- Calisthenics RPG — badges/hauts faits
+-- Calisthenics RPG - badges/hauts faits
 -- Purement additif : aucune table existante n'est modifiée, aucune donnée
 -- déjà en base (sessions, user_progress, exercises...) n'est touchée.
 

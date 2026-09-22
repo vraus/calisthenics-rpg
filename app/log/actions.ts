@@ -7,6 +7,8 @@ import {
   cascadeMasterLowerTiers,
   getAllExercises,
   getFamilies,
+  getPhases,
+  getProfile,
   getRestDayCompletionDates,
   getSessionCount,
   getSessionDatesForStreak,
@@ -14,7 +16,12 @@ import {
 } from "@/lib/data";
 import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
-import { evaluateNewBadges, type BadgeContext } from "@/lib/badges";
+import {
+  buildFamilyBadgeDefinitions,
+  buildPhaseBadgeDefinitions,
+  evaluateNewBadges,
+  type BadgeContext,
+} from "@/lib/badges";
 import type { Exercise, UserProgress } from "@/lib/types";
 
 export interface LogSessionResult {
@@ -34,22 +41,27 @@ export interface LogSessionResult {
  * any newly-earned badges. Takes `progress` (post-session) as a param
  * rather than re-fetching, since the caller already needs it for the
  * level-up check. Never throws: a badge-evaluation hiccup shouldn't fail
- * the session that was already successfully logged.
+ * the session that was already successfully logged. Exported: also called
+ * from app/tree/actions.ts after a self-report (mastery or circuit), which
+ * has no pre-fetched progress to reuse.
  */
-async function awardNewBadges(
+export async function awardNewBadges(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   progress: UserProgress[]
 ): Promise<string[]> {
   try {
-    const [families, exercises, sessionCount, sessionDates, restDayDates, earnedRows] = await Promise.all([
-      getFamilies(),
-      getAllExercises(),
-      getSessionCount(userId),
-      getSessionDatesForStreak(userId),
-      getRestDayCompletionDates(userId),
-      supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
-    ]);
+    const [families, exercises, phases, profile, sessionCount, sessionDates, restDayDates, earnedRows] =
+      await Promise.all([
+        getFamilies(),
+        getAllExercises(),
+        getPhases(),
+        getProfile(userId),
+        getSessionCount(userId),
+        getSessionDatesForStreak(userId),
+        getRestDayCompletionDates(userId),
+        supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
+      ]);
 
     const familySlugById = new Map(families.map((f) => [f.id, f.slug]));
     const masteredExerciseSlugs = new Set<string>();
@@ -81,6 +93,12 @@ async function awardNewBadges(
         .filter((slug): slug is string => Boolean(slug))
     );
 
+    const sortedPhases = [...phases].sort((a, b) => a.sortOrder - b.sortOrder);
+    const currentPhaseIndex = sortedPhases.findIndex((p) => p.id === profile?.currentPhaseId);
+    const completedPhaseSlugs = new Set(
+      currentPhaseIndex > 0 ? sortedPhases.slice(0, currentPhaseIndex).map((p) => p.slug) : []
+    );
+
     const ctx: BadgeContext = {
       sessionCount,
       currentStreak: computeStreak([...sessionDates, ...restDayDates]).current,
@@ -88,9 +106,14 @@ async function awardNewBadges(
       masteredExerciseSlugs,
       masteredSlugsByFamily,
       totalExercisesByFamily,
+      completedPhaseSlugs,
     };
 
-    const newSlugs = evaluateNewBadges(ctx, alreadyEarnedSlugs);
+    const dynamicDefinitions = [
+      ...buildFamilyBadgeDefinitions(families.map((f) => f.slug)),
+      ...buildPhaseBadgeDefinitions(phases.map((p) => p.slug)),
+    ];
+    const newSlugs = evaluateNewBadges(ctx, alreadyEarnedSlugs, dynamicDefinitions);
     if (newSlugs.length === 0) return [];
 
     const { data: badgeRows } = await supabase

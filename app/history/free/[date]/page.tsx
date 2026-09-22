@@ -2,7 +2,7 @@ import { getAuthenticatedUserId } from "@/lib/auth";
 import { getFreeSessionHistoryDetail } from "@/lib/data";
 import { SessionDetailView } from "../../session-detail-view";
 
-export const metadata = { title: "Détail de la séance — Calisthenics RPG" };
+export const metadata = { title: "Détail de la séance - Calisthenics RPG" };
 
 function formatDate(day: string) {
   return new Date(`${day}T00:00:00Z`).toLocaleDateString("fr-FR", {

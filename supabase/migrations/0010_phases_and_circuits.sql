@@ -1,4 +1,4 @@
--- Calisthenics RPG — phases (zones de progression), description des niveaux,
+-- Calisthenics RPG - phases (zones de progression), description des niveaux,
 -- variantes d'exercices de circuit, parties de circuit (p1/p2...), suivi de
 -- complétion des circuits, phase courante du profil.
 -- Fondation du refactor "phases/compétences techniques/circuits" (Jalon 1) :
@@ -25,7 +25,7 @@ alter table session_templates add column if not exists phase_id uuid references 
 -- progression technique (family_id/tier null, ex. burpee, jumping jack), OU
 -- être la variante d'un autre exercice de circuit (variant_of_id).
 -- unlock_type/threshold/xp_coefficient ne s'appliquent qu'aux exercices de
--- compétence technique — nullable pour les mouvements de circuit purs.
+-- compétence technique - nullable pour les mouvements de circuit purs.
 alter table exercises alter column family_id drop not null;
 alter table exercises alter column tier drop not null;
 alter table exercises alter column unlock_type drop not null;
@@ -124,7 +124,7 @@ create policy "users update their own planned session parts" on planned_session_
 create policy "users delete their own planned session parts" on planned_session_parts for delete to authenticated using (auth.uid() = user_id);
 
 -- Suivi "j'ai validé ce circuit au moins une fois" (condition de passage de
--- phase, Jalon 7) — fait historique comme user_badges, jamais recalculé.
+-- phase, Jalon 7) - fait historique comme user_badges, jamais recalculé.
 create table if not exists user_circuit_completions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,

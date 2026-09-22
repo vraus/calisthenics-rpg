@@ -9,7 +9,7 @@ interface ThemeZoneFormProps {
   phases: Phase[];
   /** Zone actuellement affichée : themeZoneId si posé, sinon currentPhaseId. */
   activePhaseId?: string;
-  /** sortOrder de la phase de progression réelle du joueur — verrouille les zones au-delà. */
+  /** sortOrder de la phase de progression réelle du joueur - verrouille les zones au-delà. */
   unlockedSortOrder: number;
 }
 

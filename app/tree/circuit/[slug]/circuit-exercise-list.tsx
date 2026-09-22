@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SessionTemplateExercise, SessionTemplatePart } from "@/lib/types";
 import { selfReportMastery, unmasterLevel } from "../../actions";
-import { usePhaseAdvanced, PhaseAdvancedOverlay } from "../../../xp-feedback";
+import { usePhaseAdvanced, PhaseAdvancedOverlay, BadgeChips } from "../../../xp-feedback";
 
 interface CircuitExerciseItem extends SessionTemplateExercise {
   mastered: boolean;
@@ -23,12 +23,14 @@ export function CircuitExerciseList({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<string[]>([]);
   const { phaseName: phaseAdvanced, trigger: triggerPhaseAdvanced } = usePhaseAdvanced();
 
   function open(exercise: CircuitExerciseItem) {
     setSelected(exercise);
     setError(null);
     setNote(null);
+    setNewBadges([]);
     dialogRef.current?.showModal();
   }
 
@@ -46,6 +48,11 @@ export function CircuitExerciseList({
         return;
       }
       if (result.newPhaseName) triggerPhaseAdvanced(result.newPhaseName);
+      if (result.newBadgeNames?.length) {
+        setNewBadges(result.newBadgeNames);
+        router.refresh();
+        return;
+      }
       close();
       router.refresh();
     });
@@ -130,6 +137,7 @@ export function CircuitExerciseList({
             <p className="text-sm text-muted">{selected.exerciseDescription ?? "Description à venir."}</p>
             {error ? <p className="text-xs text-bordeaux">{error}</p> : null}
             {note ? <p className="text-xs text-gold">{note}</p> : null}
+            <BadgeChips names={newBadges} />
             <div className="flex gap-2 mt-1">
               {!selected.mastered ? (
                 <button

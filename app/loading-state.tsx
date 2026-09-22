@@ -1,6 +1,6 @@
 /**
  * Shared loading UI for route segments (imported by each segment's
- * loading.tsx — Next.js requires the file itself to live per-segment, but
+ * loading.tsx - Next.js requires the file itself to live per-segment, but
  * the markup can be shared). Shows instantly while a page's Server
  * Component data is still fetching, instead of leaving the previous page
  * frozen on screen.

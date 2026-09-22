@@ -3,7 +3,7 @@ import { getAuthenticatedUserId } from "@/lib/auth";
 import { getPlannedSessionHistoryDetail } from "@/lib/data";
 import { SessionDetailView } from "../../session-detail-view";
 
-export const metadata = { title: "Détail de la séance — Calisthenics RPG" };
+export const metadata = { title: "Détail de la séance - Calisthenics RPG" };
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("fr-FR", {

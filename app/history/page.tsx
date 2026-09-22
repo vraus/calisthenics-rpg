@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { getHistoryEntries } from "@/lib/data";
 
-export const metadata = { title: "Historique — Calisthenics RPG" };
+export const metadata = { title: "Historique - Calisthenics RPG" };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("fr-FR", {

@@ -1,4 +1,4 @@
--- Calisthenics RPG — 3ᵉ type de jour (HIIT), reps/durée éditables par
+-- Calisthenics RPG - 3ᵉ type de jour (HIIT), reps/durée éditables par
 -- exercice planifié, temps de repos configurables, templates HIIT.
 
 -- day_kind remplace is_rest_day (booléen à 2 états, insuffisant pour 3 types).

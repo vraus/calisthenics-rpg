@@ -6,7 +6,7 @@ import type { Exercise, ExerciseFamily, SessionInput, UserProgress } from "./typ
  * `log_session` / `get_progress` logic, without duplicating the rules here.
  *
  * Every function here operates on skill-tree exercises (familyId/tier set,
- * unlockType/unlockThreshold/xpCoefficient set) — never on the family-less
+ * unlockType/unlockThreshold/xpCoefficient set) - never on the family-less
  * circuit-only movements introduced alongside `Exercise.variantOfId`, which
  * have no mastery/XP concept. Callers are expected to only pass exercises
  * read from a family (getExercisesByFamilySlug/getFamiliesWithExercises).
@@ -102,7 +102,7 @@ export interface TreeNodeState extends Exercise {
  * Derives the *recommended* progression state for every exercise in a
  * family: tier 1 is always "unlocked", and each subsequent tier unlocks
  * once the previous tier's exercise has been mastered (see
- * meetsUnlockThreshold). This is purely indicative for the tree view — it
+ * meetsUnlockThreshold). This is purely indicative for the tree view - it
  * no longer gates what can be logged (see app/log/log-form.tsx), so someone
  * who's already strong enough can log a high-tier exercise directly.
  */
@@ -150,7 +150,7 @@ export interface MasteredFamilySummary {
 
 /**
  * Groups mastered exercises by family, for the profile page (own and
- * others' — the "quels exos ils maîtrisent" view).
+ * others' - the "quels exos ils maîtrisent" view).
  */
 export function buildMasteredByFamily(
   familiesWithExercises: { family: ExerciseFamily; exercises: Exercise[] }[],

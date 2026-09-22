@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Handles Supabase auth email links: exchanges the one-time code for a
  * session and writes the session cookie. Only the password-recovery flow
- * uses this now (magic-link sign-in was removed) — Supabase appends
+ * uses this now (magic-link sign-in was removed) - Supabase appends
  * `type=recovery` to the redirect for that flow, which we use to send the
  * user to set a new password instead of straight to the dashboard.
  */

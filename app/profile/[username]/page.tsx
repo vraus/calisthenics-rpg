@@ -15,7 +15,7 @@ import ProfileView from "../profile-view";
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
-  return { title: `${username} — Calisthenics RPG` };
+  return { title: `${username} - Calisthenics RPG` };
 }
 
 interface Badge {

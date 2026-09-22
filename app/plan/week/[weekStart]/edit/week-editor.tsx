@@ -26,20 +26,20 @@ interface ExerciseRow {
   targetPerformance: number;
   restBetweenSetsSeconds: number;
   restAfterExerciseSeconds: number;
-  /** Matches a PartDraft.key — undefined = the day's implicit base part (rounds/restBetweenRoundsSeconds below). */
+  /** Matches a PartDraft.key - undefined = the day's implicit base part (rounds/restBetweenRoundsSeconds below). */
   partKey?: string;
 }
 
-/** A part added from a multi-part circuit (e.g. "Push A" p1/p2) — its own round count/pause, distinct from the day's base part. */
+/** A part added from a multi-part circuit (e.g. "Push A" p1/p2) - its own round count/pause, distinct from the day's base part. */
 interface PartDraft {
   key: string;
-  /** Shared by every part added from the same "+ Ajouter un circuit" pick — lets the whole circuit be removed in one go. */
+  /** Shared by every part added from the same "+ Ajouter un circuit" pick - lets the whole circuit be removed in one go. */
   groupKey: string;
   /** Circuit name, for the "retirer ce circuit" label. */
   groupName: string;
   rounds: number;
   restBetweenRoundsSeconds: number;
-  /** Circuit d'origine (session_templates.id) — undefined si non issue d'un circuit préfait. */
+  /** Circuit d'origine (session_templates.id) - undefined si non issue d'un circuit préfait. */
   templateId?: string;
 }
 
@@ -146,7 +146,7 @@ export default function WeekEditor({
   const router = useRouter();
   // Toutes les compétences/circuits restent utilisables (les select en
   // dessous s'appuient sur exerciseById/sessionTemplates non filtrés pour
-  // résoudre ce qui est déjà planifié) — seul ce qui est PROPOSÉ dans les
+  // résoudre ce qui est déjà planifié) - seul ce qui est PROPOSÉ dans les
   // sélecteurs se filtre par zone, par défaut celle du joueur.
   const skillExercises = familiesWithExercises.flatMap((g) => g.exercises);
   const allExercises = [...skillExercises, ...circuitOnlyExercises];
@@ -155,7 +155,7 @@ export default function WeekEditor({
 
   /**
    * Un exercice de circuit (ex. "Burpee") et ses variantes (ex. "Burpee sans
-   * pompes") — le mouvement de base d'abord, puis ses variantes. Utilisé
+   * pompes") - le mouvement de base d'abord, puis ses variantes. Utilisé
    * pour la ligne d'un exercice ajouté depuis un circuit : on ne propose que
    * ce mouvement-là et ses variantes, pas tout le catalogue (voir
    * variantGroupFor plus bas pour la distinction avec le select "compétence
@@ -186,7 +186,7 @@ export default function WeekEditor({
       prev.map((d) => {
         if (d.dayOfWeek !== dayOfWeek) return d;
         if (kind === "session" && d.kind !== "session") {
-          // Coming from "rest"/"unset": start fresh, empty — the user builds
+          // Coming from "rest"/"unset": start fresh, empty - the user builds
           // it up from scratch with "+ Ajouter un exercice"/"+ Ajouter un
           // circuit".
           return {
@@ -206,7 +206,7 @@ export default function WeekEditor({
 
   /**
    * Ajoute tous les exercices d'un circuit à la liste existante du jour
-   * (additif, ne remplace rien) — ses parties (p1/p2...) deviennent des
+   * (additif, ne remplace rien) - ses parties (p1/p2...) deviennent des
    * PartDraft avec leurs propres tours/pause, distinctes de la partie de
    * base du jour et des autres circuits déjà ajoutés.
    */
@@ -257,7 +257,7 @@ export default function WeekEditor({
     );
   }
 
-  /** Retire une seule partie (et ses exercices) — pour un circuit à plusieurs parties, les autres restent. */
+  /** Retire une seule partie (et ses exercices) - pour un circuit à plusieurs parties, les autres restent. */
   function removePart(dayOfWeek: DayOfWeek, partKey: string) {
     setDays((prev) =>
       prev.map((d) =>
@@ -315,7 +315,7 @@ export default function WeekEditor({
                       // propre (ce n'est pas une compétence technique) :
                       // basculer vers une variante ne doit pas écraser
                       // l'objectif déjà réglé par le circuit (ex. burpee
-                      // x10) — seul un vrai changement de compétence
+                      // x10) - seul un vrai changement de compétence
                       // technique en propose un nouveau.
                       targetPerformance: exercise?.unlockThreshold ?? e.targetPerformance,
                     }
@@ -338,7 +338,7 @@ export default function WeekEditor({
         const removed = d.exercises[rowIndex];
         const exercises = d.exercises.filter((_, i) => i !== rowIndex);
         // Une partie dont c'était le dernier exercice n'a plus de raison
-        // d'exister — évite d'accumuler des parties vides au fil des ajouts/
+        // d'exister - évite d'accumuler des parties vides au fil des ajouts/
         // suppressions de circuits.
         const stillUsed = new Set(exercises.map((e) => e.partKey).filter(Boolean));
         const parts = removed?.partKey ? d.parts.filter((p) => stillUsed.has(p.key)) : d.parts;
@@ -449,7 +449,7 @@ export default function WeekEditor({
                 const part = row.partKey ? day.parts.find((p) => p.key === row.partKey) : undefined;
                 const showPartHeader = part && allRows[rowIndex - 1]?.partKey !== row.partKey;
                 // Une ligne ajoutée depuis un circuit ne propose que ce
-                // mouvement et ses variantes (pas tout le catalogue) — une
+                // mouvement et ses variantes (pas tout le catalogue) - une
                 // ligne ajoutée via "+ Ajouter un exercice" garde le
                 // sélecteur complet par compétence technique.
                 const variantOptions = row.partKey ? variantGroupFor(row.exerciseId) : [];
@@ -550,7 +550,7 @@ export default function WeekEditor({
                           {(
                             // La famille de l'exercice déjà choisi sur cette
                             // ligne reste visible même filtrée par une autre
-                            // zone — sinon le select retombe visuellement sur
+                            // zone - sinon le select retombe visuellement sur
                             // la 1ʳᵉ option sans que la ligne change vraiment.
                             phaseFilter === "all"
                               ? familiesWithExercises

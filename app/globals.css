@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Zone 1 ("forêt") — vert dominant. Aussi le thème par défaut : pas de
+  /* Zone 1 ("forêt") - vert dominant. Aussi le thème par défaut : pas de
      [data-zone="1"] block ci-dessous, cette palette EST la zone 1, et sert
      de repli pour les pages déconnectées/pas-encore-placées (voir
      lib/theme.ts). --bordeaux reste rougeâtre dans toutes les zones : c'est
@@ -18,12 +18,12 @@
   --muted: #a9c2a0;
   --locked: #172218;
   /* Reserved for reward moments (badge earned, exercise mastered, level-up)
-     — distinct from --accent, which stays for ordinary interactive UI. */
+     - distinct from --accent, which stays for ordinary interactive UI. */
   --gold: #d4af37;
   --gold-glow: rgba(212, 175, 55, 0.35);
 }
 
-/* Zone 2 ("désert") — sablé, tons chauds ocre/sable. Posé côté serveur sur
+/* Zone 2 ("désert") - sablé, tons chauds ocre/sable. Posé côté serveur sur
    <html data-zone="2"> depuis lib/theme.ts, pas de bascule JS. */
 [data-zone="2"] {
   --background: #241a0c;
@@ -40,7 +40,7 @@
   --gold-glow: rgba(232, 201, 74, 0.35);
 }
 
-/* Zone 3 ("glacier") — bleu froid dominant. */
+/* Zone 3 ("glacier") - bleu froid dominant. */
 [data-zone="3"] {
   --background: #081420;
   --foreground: #e3f1fb;
@@ -73,7 +73,7 @@
 
 html {
   /* Safety net: a stray overflowing element on a narrow screen shouldn't be
-     able to widen the whole page and break the centered layout — it should
+     able to widen the whole page and break the centered layout - it should
      just clip instead. Individual overflow sources are still fixed at the
      component level where found; this is a backstop, not the real fix. */
   overflow-x: hidden;
@@ -86,7 +86,7 @@ body {
     Helvetica, Arial, sans-serif;
 }
 
-/* Shared card treatment — one place to evolve the "game panel" look instead
+/* Shared card treatment - one place to evolve the "game panel" look instead
    of repeating `rounded-xl border border-border bg-surface` in every page. */
 .panel-rpg {
   border-radius: 0.75rem;
@@ -129,7 +129,7 @@ body {
 }
 
 /* Punchier entrance than level-up-pop (bigger overshoot + a little wiggle),
-   for a panel that STAYS on screen — "day finished" summaries. Ends at
+   for a panel that STAYS on screen - "day finished" summaries. Ends at
    opacity 1 / scale 1 on purpose, unlike level-up-pop: this isn't an
    auto-dismissing overlay, so the animation must not fade it back out. */
 @keyframes celebrate-in {
@@ -157,7 +157,7 @@ body {
   animation: celebrate-in 0.9s ease-out forwards;
 }
 
-/* Same entrance, but fades back out at the end — for overlays that
+/* Same entrance, but fades back out at the end - for overlays that
    auto-unmount via JS after a timer (see usePerfectWeek), timed to roughly
    match that timer so it doesn't just vanish. */
 @keyframes celebrate {

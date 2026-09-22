@@ -10,7 +10,7 @@ import {
 import WeekEditor from "./week-editor";
 import DeleteWeekButton from "./delete-week-button";
 
-export const metadata = { title: "Éditer ma semaine — Calisthenics RPG" };
+export const metadata = { title: "Éditer ma semaine - Calisthenics RPG" };
 
 function formatWeek(weekStart: string) {
   return new Date(`${weekStart}T00:00:00Z`).toLocaleDateString("fr-FR", {
@@ -45,7 +45,7 @@ export default async function EditWeekPage({
     getProfile(userId),
   ]);
   // Mouvements de circuit sans compétence technique (burpee, pompes diamant,
-  // variantes...) — pas dans familiesWithExercises (groupé par famille), mais
+  // variantes...) - pas dans familiesWithExercises (groupé par famille), mais
   // nécessaires pour que le sélecteur par ligne affiche correctement un
   // exercice ajouté depuis un circuit plutôt qu'une compétence.
   const circuitOnlyExercises = allExercises.filter((ex) => !ex.familyId);

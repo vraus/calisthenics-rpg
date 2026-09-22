@@ -1,4 +1,4 @@
--- Calisthenics RPG — schéma initial
+-- Calisthenics RPG - schéma initial
 -- Familles de mouvements, exercices/tiers, séances loggées, progression utilisateur.
 
 create table if not exists exercise_families (

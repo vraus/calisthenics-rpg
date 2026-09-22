@@ -18,7 +18,7 @@ export interface CreatePlanResult {
 }
 
 /**
- * Deletes an entire week's plan — the "start over" escape hatch. No lock
+ * Deletes an entire week's plan - the "start over" escape hatch. No lock
  * check: unlike editing a single day, wiping the whole week is an explicit
  * user action, not something that could silently overwrite progress on
  * days the user didn't mean to touch. Cascades to planned_sessions/
@@ -51,7 +51,7 @@ interface DayExerciseInput {
   targetPerformance: number;
   restBetweenSetsSeconds?: number;
   restAfterExerciseSeconds?: number;
-  /** Matches a DayPartInput.key — absent = the day's implicit base part (rounds/restBetweenRoundsSeconds below). */
+  /** Matches a DayPartInput.key - absent = the day's implicit base part (rounds/restBetweenRoundsSeconds below). */
   partKey?: string;
 }
 
@@ -60,7 +60,7 @@ interface DayPartInput {
   label?: string;
   rounds: number;
   restBetweenRoundsSeconds: number;
-  /** Circuit d'origine (session_templates.id), pour le suivi de complétion des circuits — voir finalizePlannedSessionInternal. */
+  /** Circuit d'origine (session_templates.id), pour le suivi de complétion des circuits - voir finalizePlannedSessionInternal. */
   templateId?: string;
 }
 
@@ -69,7 +69,7 @@ interface DayInput {
   kind: "rest" | "session" | "unset";
   label?: string;
   exercises?: DayExerciseInput[];
-  /** Parts added from a multi-part circuit — beyond the day's own implicit base part. */
+  /** Parts added from a multi-part circuit - beyond the day's own implicit base part. */
   parts?: DayPartInput[];
   rounds?: number;
   restBetweenRoundsSeconds?: number;
@@ -299,7 +299,7 @@ export async function saveWeeklyPlanDays(
           return { ok: false, error: "Échec de la création d'un exercice planifié." };
         }
 
-        // targetSets is "per round" as entered in the editor — the actual
+        // targetSets is "per round" as entered in the editor - the actual
         // number of validatable sets is that times the round count of the
         // part this exercise belongs to (day-level base part, or an
         // explicit part with its own round count).
@@ -322,7 +322,7 @@ export async function saveWeeklyPlanDays(
   return { ok: true };
 }
 
-/** Clones the current week's plan into next week — refuses if next week already has one. */
+/** Clones the current week's plan into next week - refuses if next week already has one. */
 export async function copyWeekToNextWeek(): Promise<CreatePlanResult> {
   const supabase = await createClient();
   const userId = await getAuthenticatedUserId();
@@ -428,7 +428,7 @@ interface SessionSetsInfo {
 /**
  * Single query (via the planned_exercises FK join) covering both the
  * "is every set done" check and the session ids needed for the completion
- * XP bonus — replaces what used to be up to 4 separate round trips across
+ * XP bonus - replaces what used to be up to 4 separate round trips across
  * isSessionFullyDone + the finalize block's own exercise/set lookups.
  */
 async function loadSessionSetsInfo(
@@ -455,7 +455,7 @@ export interface ValidateSetResult extends LogSessionResult {
 
 /**
  * Validates one planned set: logs sets=1 at the reps/duration actually
- * performed (entered at validation time — falls back to the planned target
+ * performed (entered at validation time - falls back to the planned target
  * only if not provided, for callers that predate this).
  */
 export async function validateSet(plannedSetId: string, actualPerformance?: number): Promise<ValidateSetResult> {
@@ -613,7 +613,7 @@ export interface FinalizeResult {
   newPhaseName?: string;
 }
 
-/** User-triggered "Terminer la séance" — works at any completion level (training days only). */
+/** User-triggered "Terminer la séance" - works at any completion level (training days only). */
 export async function finalizePlannedSession(plannedSessionId: string): Promise<FinalizeResult> {
   const supabase = await createClient();
   const userId = await getAuthenticatedUserId();
@@ -747,7 +747,7 @@ async function finalizePlannedSessionInternal(
  * entièrement terminées (appelant garanti par finalizePlannedSessionInternal
  * dans sa branche fullCompletion). Un circuit n'est considéré validé que si
  * TOUTES ses parties (pas juste certaines) étaient présentes dans cette
- * séance — un circuit auquel une partie a été retirée dans l'éditeur ne
+ * séance - un circuit auquel une partie a été retirée dans l'éditeur ne
  * compte pas comme fait.
  */
 async function recordCompletedCircuits(

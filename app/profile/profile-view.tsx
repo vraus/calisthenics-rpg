@@ -35,6 +35,7 @@ export default function ProfileView({
   badges: BadgeEntry[];
   records?: PersonalRecord[];
 }) {
+  const earnedBadges = badges.filter((b) => b.earnedAt);
   return (
     <div className="flex flex-col gap-6">
       <section className="panel-rpg p-5 grid grid-cols-2 gap-4">
@@ -107,25 +108,25 @@ export default function ProfileView({
       ) : null}
 
       <section>
-        <h2 className="text-sm font-medium text-muted mb-2">Badges</h2>
-        <ul className="flex flex-col gap-2">
-          {badges.map((badge) => (
-            <li
-              key={badge.slug}
-              className={`p-3 flex items-center justify-between gap-3 ${
-                badge.earnedAt
-                  ? "panel-rpg panel-rpg-gold"
-                  : "rounded-lg border border-border bg-locked text-muted"
-              }`}
-            >
-              <div>
-                <p className="font-medium text-sm">{badge.name}</p>
-                <p className="text-xs">{badge.description}</p>
-              </div>
-              {badge.earnedAt ? <span className="text-gold text-sm font-medium">✓</span> : null}
-            </li>
-          ))}
-        </ul>
+        <h2 className="text-sm font-medium text-muted mb-2">
+          Badges {earnedBadges.length > 0 ? `(${earnedBadges.length})` : null}
+        </h2>
+        {earnedBadges.length === 0 ? (
+          <p className="text-sm text-muted">Aucun badge obtenu pour l&apos;instant.</p>
+        ) : (
+          <ul className="grid grid-cols-3 gap-2">
+            {earnedBadges.map((badge) => (
+              <li
+                key={badge.slug}
+                title={badge.description}
+                className="panel-rpg panel-rpg-gold p-3 flex flex-col items-center gap-1 text-center"
+              >
+                <span className="text-gold text-lg">🏆</span>
+                <p className="text-xs font-medium leading-tight">{badge.name}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

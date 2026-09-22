@@ -64,7 +64,7 @@ séance.
 
 Pousser sur un repo Git, importer dans Vercel, renseigner les mêmes
 variables d'environnement (sauf `SUPABASE_SERVICE_ROLE_KEY`, à garder
-seulement en local pour le seed — ne pas la mettre sur Vercel si le
+seulement en local pour le seed - ne pas la mettre sur Vercel si le
 projet ne s'en sert pas côté serveur ailleurs).
 
 Sur mobile : ouvrir l'URL Vercel dans le navigateur, puis "Ajouter à
@@ -81,35 +81,35 @@ niveau, agrégation par famille et globale, déblocage de tier.
 
 ## Structure
 
-- `lib/xp.ts` — moteur XP, sans dépendance UI ni Supabase. Réutilisable
+- `lib/xp.ts` - moteur XP, sans dépendance UI ni Supabase. Réutilisable
   tel quel par un futur serveur MCP.
-- `lib/data.ts` — couche d'accès aux données (lectures Supabase côté
+- `lib/data.ts` - couche d'accès aux données (lectures Supabase côté
   serveur, RLS-scopées).
-- `lib/supabase/` — clients Supabase (navigateur / serveur).
-- `seed/trees.json` — configuration des arbres de progression, éditable
+- `lib/supabase/` - clients Supabase (navigateur / serveur).
+- `seed/trees.json` - configuration des arbres de progression, éditable
   sans toucher au code. **Règle de compatibilité : ne jamais renommer ni
-  supprimer un `slug` d'exercice ou de famille existant** — `sessions` et
+  supprimer un `slug` d'exercice ou de famille existant** - `sessions` et
   `user_progress` y font référence pour de vrais utilisateurs ; on ajoute
   toujours de nouveaux tiers/familles, jamais en remplaçant les existants.
   `npm run seed` est idempotent (upsert par slug).
-- `seed/badges.json` — catalogue des badges (même règle de compatibilité :
+- `seed/badges.json` - catalogue des badges (même règle de compatibilité :
   un `slug` de badge ne se renomme ni ne se supprime, `user_badges` y fait
   référence). `lib/badges.ts` définit les critères de déblocage (pur, testé,
   sans dépendance Supabase).
-- `lib/streak.ts` — calcul du streak d'assiduité à partir des séances
+- `lib/streak.ts` - calcul du streak d'assiduité à partir des séances
   loggées, rien n'est stocké.
-- `app/stats/` — page stats/records perso et badges obtenus.
-- `app/log/` — page + Server Action de logging de séance.
-- `app/tree/` — vue arbres de compétences (index + détail par famille).
-- `app/dashboard/` — niveau global, XP, séances récentes.
-- `app/history/` — historique complet des séances.
-- `proxy.ts` — refresh de session Supabase + redirection si non connecté
+- `app/stats/` - page stats/records perso et badges obtenus.
+- `app/log/` - page + Server Action de logging de séance.
+- `app/tree/` - vue arbres de compétences (index + détail par famille).
+- `app/dashboard/` - niveau global, XP, séances récentes.
+- `app/history/` - historique complet des séances.
+- `proxy.ts` - refresh de session Supabase + redirection si non connecté
   (équivalent du middleware, renommé en Next 16).
-- `app/login/` — connexion, inscription (code d'invitation) et mot de passe
-  oublié. `app/logout/` — déconnexion. `app/auth/reset-password/` —
+- `app/login/` - connexion, inscription (code d'invitation) et mot de passe
+  oublié. `app/logout/` - déconnexion. `app/auth/reset-password/` -
   définition/changement de mot de passe.
-- `lib/supabase/remember.ts` — logique du "rester connecté 30 jours".
-- `mcp-server/` — serveur MCP exposant `lib/xp.ts` (projet Node séparé, voir
+- `lib/supabase/remember.ts` - logique du "rester connecté 30 jours".
+- `mcp-server/` - serveur MCP exposant `lib/xp.ts` (projet Node séparé, voir
   son propre `package.json`).
 
 ## Pas encore couvert

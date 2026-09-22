@@ -3,7 +3,7 @@ import { getAuthenticatedUserId } from "@/lib/auth";
 import { getPhases, getProfile } from "@/lib/data";
 import { OnboardingWizard } from "./onboarding-wizard";
 
-export const metadata = { title: "Placement — Calisthenics RPG" };
+export const metadata = { title: "Placement - Calisthenics RPG" };
 
 export default async function OnboardingPage() {
   const userId = await getAuthenticatedUserId();

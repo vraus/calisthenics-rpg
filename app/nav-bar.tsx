@@ -17,7 +17,7 @@ const LINKS = [
 const HIDDEN_ON = ["/login", "/auth", "/onboarding"];
 
 /**
- * Fixed top header with a hamburger menu — a full-screen panel is simpler
+ * Fixed top header with a hamburger menu - a full-screen panel is simpler
  * to get right on mobile (no accidental clicks) than a slide-in drawer, and
  * this app has no desktop-only layout to preserve horizontal space for.
  */

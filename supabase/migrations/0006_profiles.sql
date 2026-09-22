@@ -1,4 +1,4 @@
--- Calisthenics RPG — profils publics + annuaire
+-- Calisthenics RPG - profils publics + annuaire
 -- Ajoute la table profiles et élargit la lecture de user_progress/sessions/
 -- xp_bonuses à tout utilisateur authentifié (choix produit assumé : l'app
 -- est restreinte à un petit groupe d'invités qui se connaissent déjà).

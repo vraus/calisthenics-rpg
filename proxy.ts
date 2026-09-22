@@ -11,15 +11,15 @@ const PUBLIC_PATHS = ["/login", "/auth/callback", "/auth/reset-password"];
  *
  * auth.getUser() does a real network round trip to Supabase's Auth server
  * to revalidate the JWT (unlike getSession(), which just reads the local
- * cookie and isn't trustworthy server-side) — that's the right call to make
+ * cookie and isn't trustworthy server-side) - that's the right call to make
  * here, but every page and Server Action was ALSO calling it again on top
  * of this one, doubling that network cost on literally every request. This
  * forwards the already-verified user via request headers (the canonical
- * Next.js pattern — see node_modules/next/dist/docs/01-app/
+ * Next.js pattern - see node_modules/next/dist/docs/01-app/
  * 03-api-reference/03-file-conventions/proxy.md) so downstream code can
  * just read who's logged in instead of re-verifying. Always set from our
  * own getUser() result, never from an incoming client header, so it can't
- * be spoofed — the proxy runs on every route except static assets.
+ * be spoofed - the proxy runs on every route except static assets.
  */
 export async function proxy(request: NextRequest) {
   const remember = request.cookies.get(REMEMBER_COOKIE_NAME)?.value === "1";

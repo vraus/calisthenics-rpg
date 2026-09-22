@@ -32,7 +32,7 @@ export function pickStartingPhase(
     if (answerByPhase.get(phase.id)) return phase;
   }
 
-  // No phase without prerequisites exists and no "yes" answer was given —
+  // No phase without prerequisites exists and no "yes" answer was given -
   // fall back to the easiest phase.
   return hardestFirst[hardestFirst.length - 1];
 }

@@ -17,7 +17,7 @@ import ProfileView from "./profile-view";
 import UsernameForm from "./username-form";
 import { ThemeZoneForm } from "./theme-zone-form";
 
-export const metadata = { title: "Profil — Calisthenics RPG" };
+export const metadata = { title: "Profil - Calisthenics RPG" };
 
 interface SessionRow {
   id: string;

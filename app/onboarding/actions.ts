@@ -9,7 +9,7 @@ export interface CompleteOnboardingResult {
   error?: string;
 }
 
-/** Sets the player's starting phase and marks onboarding as done — never re-run after this. */
+/** Sets the player's starting phase and marks onboarding as done - never re-run after this. */
 export async function completeOnboarding(phaseId: string): Promise<CompleteOnboardingResult> {
   const supabase = await createClient();
   const userId = await getAuthenticatedUserId();

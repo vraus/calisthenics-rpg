@@ -1,5 +1,5 @@
 /**
- * Attendance streak, derived from session timestamps — nothing stored,
+ * Attendance streak, derived from session timestamps - nothing stored,
  * recomputed on read. No UI or Supabase dependency, same spirit as xp.ts.
  */
 

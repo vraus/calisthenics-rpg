@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { TreeNodeState } from "@/lib/xp";
 import { selfReportMastery, unmasterLevel } from "../actions";
-import { usePhaseAdvanced, PhaseAdvancedOverlay } from "../../xp-feedback";
+import { usePhaseAdvanced, PhaseAdvancedOverlay, BadgeChips } from "../../xp-feedback";
 
 export function TreeNodeList({ nodes }: { nodes: TreeNodeState[] }) {
   const [selected, setSelected] = useState<TreeNodeState | null>(null);
@@ -13,12 +13,14 @@ export function TreeNodeList({ nodes }: { nodes: TreeNodeState[] }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<string[]>([]);
   const { phaseName: phaseAdvanced, trigger: triggerPhaseAdvanced } = usePhaseAdvanced();
 
   function open(node: TreeNodeState) {
     setSelected(node);
     setError(null);
     setNote(null);
+    setNewBadges([]);
     dialogRef.current?.showModal();
   }
 
@@ -35,10 +37,16 @@ export function TreeNodeList({ nodes }: { nodes: TreeNodeState[] }) {
         setError(result.error ?? "Erreur.");
         return;
       }
-      // Déclenche l'état avant router.refresh() (pas l'inverse) — sinon le
+      // Déclenche l'état avant router.refresh() (pas l'inverse) - sinon le
       // rafraîchissement peut interrompre la mise à jour avant qu'elle ne
       // s'applique et la popup n'apparaît jamais.
       if (result.newPhaseName) triggerPhaseAdvanced(result.newPhaseName);
+      if (result.newBadgeNames?.length) {
+        // Pas de fermeture auto : le joueur doit voir les badges gagnés.
+        setNewBadges(result.newBadgeNames);
+        router.refresh();
+        return;
+      }
       close();
       router.refresh();
     });
@@ -120,6 +128,7 @@ export function TreeNodeList({ nodes }: { nodes: TreeNodeState[] }) {
             </p>
             {error ? <p className="text-xs text-bordeaux">{error}</p> : null}
             {note ? <p className="text-xs text-gold">{note}</p> : null}
+            <BadgeChips names={newBadges} />
             <div className="flex gap-2 mt-1">
               {!selected.mastered ? (
                 <button

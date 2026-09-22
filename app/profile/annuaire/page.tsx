@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { getAllProfilesWithLevel } from "@/lib/data";
 
-export const metadata = { title: "Annuaire — Calisthenics RPG" };
+export const metadata = { title: "Annuaire - Calisthenics RPG" };
 
 export default async function AnnuairePage() {
   const userId = await getAuthenticatedUserId();
@@ -15,7 +15,7 @@ export default async function AnnuairePage() {
     );
   }
 
-  // "test" is the internal debug account, not a real user — excluded here.
+  // "test" is the internal debug account, not a real user - excluded here.
   const profiles = (await getAllProfilesWithLevel()).filter(
     (p) => p.username.toLowerCase() !== "test"
   );

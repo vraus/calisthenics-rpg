@@ -47,12 +47,6 @@
       "name": "Touche-à-tout",
       "description": "Maîtriser au moins un exercice dans chaque famille.",
       "sortOrder": 8
-    },
-    {
-      "slug": "jambes-de-fer",
-      "name": "Jambes de fer",
-      "description": "Maîtriser tous les exercices de la famille Jambes.",
-      "sortOrder": 9
     }
   ]
 }

@@ -9,7 +9,7 @@ import {
 } from "@/lib/data";
 import { buildFamilyTree, familyLevel } from "@/lib/xp";
 
-export const metadata = { title: "Arbres de compétences — Calisthenics RPG" };
+export const metadata = { title: "Arbres de compétences - Calisthenics RPG" };
 
 export default async function TreeIndexPage() {
   const userId = await getAuthenticatedUserId();

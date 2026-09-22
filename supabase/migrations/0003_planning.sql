@@ -1,4 +1,4 @@
--- Calisthenics RPG — planification hebdomadaire + bonus XP
+-- Calisthenics RPG - planification hebdomadaire + bonus XP
 -- Purement additif : aucune table existante n'est modifiée, aucune donnée
 -- déjà en base (sessions, user_progress, badges...) n'est touchée.
 
@@ -45,7 +45,7 @@ create table if not exists planned_sets (
 
 -- Generic ledger for XP not tied to a specific exercise (full-session bonus,
 -- perfect-week bonus). Global level = sum(user_progress.xp_in_exercise) +
--- sum(xp_bonuses.amount) — never folded into a family level.
+-- sum(xp_bonuses.amount) - never folded into a family level.
 create table if not exists xp_bonuses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,

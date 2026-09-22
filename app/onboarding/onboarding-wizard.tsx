@@ -8,7 +8,7 @@ import { completeOnboarding } from "./actions";
 
 /**
  * Séquentiel, du plus dur au plus facile : "as-tu déjà les prérequis de la
- * phase N ?" — dès qu'on répond oui, ou qu'on atteint une phase sans
+ * phase N ?" - dès qu'on répond oui, ou qu'on atteint une phase sans
  * prérequis (phase 1), c'est fini (voir lib/phase-placement.ts).
  */
 export function OnboardingWizard({ phases }: { phases: Phase[] }) {
@@ -57,7 +57,7 @@ export function OnboardingWizard({ phases }: { phases: Phase[] }) {
           </p>
         ) : (
           <p className="mt-1 text-sm text-muted">
-            Pas de prérequis — c&apos;est le point de départ par défaut.
+            Pas de prérequis - c&apos;est le point de départ par défaut.
           </p>
         )}
       </div>

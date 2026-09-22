@@ -3,18 +3,26 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { cascadeMasterLowerTiers, cascadeUnmasterHigherTiers, maybeAdvancePhase, maybeRevertPhase } from "@/lib/data";
+import {
+  cascadeMasterLowerTiers,
+  cascadeUnmasterHigherTiers,
+  getUserProgress,
+  maybeAdvancePhase,
+  maybeRevertPhase,
+} from "@/lib/data";
+import { awardNewBadges } from "@/app/log/actions";
 
 export interface SelfReportMasteryResult {
   ok: boolean;
   error?: string;
   newPhaseName?: string;
+  newBadgeNames?: string[];
 }
 
 /**
  * Lets a player who already had this level before joining the app mark it as
  * mastered directly, without logging a session. Only flips
- * user_progress.mastered — grants no XP (self-reporting a skill you already
+ * user_progress.mastered - grants no XP (self-reporting a skill you already
  * had shouldn't inflate the global level the same way earning it in-app
  * does), and never touches xp_in_exercise if a row already exists.
  */
@@ -61,13 +69,15 @@ export async function selfReportMastery(exerciseId: string): Promise<SelfReportM
     await cascadeMasterLowerTiers(supabase, userId, exerciseRow.family_id, exerciseRow.tier);
   }
 
+  const progress = await getUserProgress(userId);
+  const newBadgeNames = await awardNewBadges(supabase, userId, progress);
   const advanced = await maybeAdvancePhase(supabase, userId);
 
   revalidatePath("/tree", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/profile");
   revalidatePath("/", "layout");
-  return { ok: true, newPhaseName: advanced?.newPhaseName };
+  return { ok: true, newPhaseName: advanced?.newPhaseName, newBadgeNames: newBadgeNames.length ? newBadgeNames : undefined };
 }
 
 export interface CircuitCompletionResult {
@@ -75,10 +85,11 @@ export interface CircuitCompletionResult {
   error?: string;
   revertedPhaseName?: string;
   newPhaseName?: string;
+  newBadgeNames?: string[];
 }
 
 /**
- * Déclare un circuit déjà fait avant l'appli, sans passer par une séance —
+ * Déclare un circuit déjà fait avant l'appli, sans passer par une séance -
  * même esprit que selfReportMastery. Marque aussi chacun de ses exercices
  * comme acquis (on ne peut pas avoir fait le circuit sans avoir fait ses
  * exercices), et vérifie si ça complète la phase courante.
@@ -132,18 +143,24 @@ export async function selfReportCircuitCompletion(templateId: string): Promise<C
     ]);
   }
 
+  const progressAfterCircuit = await getUserProgress(userId);
+  const newBadgeNames = await awardNewBadges(supabase, userId, progressAfterCircuit);
   const advanced = await maybeAdvancePhase(supabase, userId);
 
   revalidatePath("/tree", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/profile");
   revalidatePath("/", "layout");
-  return { ok: true, newPhaseName: advanced?.newPhaseName };
+  return {
+    ok: true,
+    newPhaseName: advanced?.newPhaseName,
+    newBadgeNames: newBadgeNames.length ? newBadgeNames : undefined,
+  };
 }
 
 /**
  * Invalide un circuit marqué acquis (par une séance ou une auto-déclaration)
- * — pour corriger une erreur. Invalide aussi chacun de ses exercices
+ * - pour corriger une erreur. Invalide aussi chacun de ses exercices
  * (symétrique de selfReportCircuitCompletion, qui les marque acquis).
  */
 export async function uncompleteCircuit(templateId: string): Promise<CircuitCompletionResult> {
@@ -192,7 +209,7 @@ export interface UnmasterLevelResult {
 
 /**
  * Invalide un niveau déjà marqué maîtrisé (par une séance ou une
- * auto-déclaration) — pour corriger une erreur. Invalide aussi tous les
+ * auto-déclaration) - pour corriger une erreur. Invalide aussi tous les
  * niveaux supérieurs de la même compétence technique qui étaient maîtrisés
  * (symétrique de cascadeMasterLowerTiers) : on ne peut pas légitimement
  * avoir le niveau 4 sans le niveau 2. Ne touche pas l'XP déjà gagnée.

@@ -50,9 +50,9 @@ export interface SetThemeZoneResult {
 
 /**
  * Sets (or clears, with `phaseId: null`) the player's manually-chosen theme
- * zone — independent of their actual progression phase (see lib/theme.ts).
+ * zone - independent of their actual progression phase (see lib/theme.ts).
  * Server-side check (never trust the client here): only a zone at or below
- * the player's actual progression phase can be chosen — a locked zone's
+ * the player's actual progression phase can be chosen - a locked zone's
  * theme can't be worn early.
  */
 export async function setThemeZone(phaseId: string | null): Promise<SetThemeZoneResult> {

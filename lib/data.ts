@@ -116,7 +116,7 @@ export async function getFamiliesWithExercises(): Promise<
   }));
 }
 
-/** Every exercise, including family-less circuit movements and variants — filter as needed. */
+/** Every exercise, including family-less circuit movements and variants - filter as needed. */
 export async function getAllExercises(): Promise<Exercise[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -161,7 +161,7 @@ export async function getRecentSessions(userId: string, limit = 20) {
   return data ?? [];
 }
 
-/** Total session count — cheap head-count query, no row data fetched. */
+/** Total session count - cheap head-count query, no row data fetched. */
 export async function getSessionCount(userId: string): Promise<number> {
   const supabase = await createClient();
   const { count, error } = await supabase
@@ -175,7 +175,7 @@ export async function getSessionCount(userId: string): Promise<number> {
 
 /**
  * Just enough recent session dates to compute a streak (badge thresholds
- * only go up to 30 days) — no join, unlike getRecentSessions, since only
+ * only go up to 30 days) - no join, unlike getRecentSessions, since only
  * `performed_at` is needed here.
  */
 export async function getSessionDatesForStreak(userId: string, limit = 90): Promise<string[]> {
@@ -203,7 +203,7 @@ export async function getXpBonusTotal(userId: string): Promise<number> {
 }
 
 /**
- * Completion timestamps of validated rest days — merged with
+ * Completion timestamps of validated rest days - merged with
  * sessions.performed_at before computeStreak() so a rested day keeps the
  * attendance streak alive too (see lib/streak.ts), not just a logged
  * session. Rest days don't create a `sessions` row (no performance to
@@ -282,7 +282,7 @@ export async function getPlannedWeekStarts(userId: string, weekStarts: string[])
 
 /**
  * Reusable exercise circuits (e.g. "HIIT", more to come), for the week
- * editor's "start from a template" picker — an alternative to "Custom" when
+ * editor's "start from a template" picker - an alternative to "Custom" when
  * building a "session" day.
  */
 export async function getSessionTemplates(): Promise<SessionTemplate[]> {
@@ -370,7 +370,7 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
   });
 }
 
-/** Circuits (session_templates.id) this user has validated at least once — via a completed session or a self-report. */
+/** Circuits (session_templates.id) this user has validated at least once - via a completed session or a self-report. */
 export async function getCompletedCircuitIds(userId: string): Promise<Set<string>> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -472,7 +472,7 @@ export async function getWeeklyPlan(userId: string, weekStart: string): Promise<
   };
 }
 
-/** A single planned session, fully nested — used by the execution page. */
+/** A single planned session, fully nested - used by the execution page. */
 export async function getPlannedSessionDetail(
   userId: string,
   plannedSessionId: string
@@ -534,7 +534,7 @@ export async function getPlannedSessionDetail(
 }
 
 /**
- * XP summary for an already-completed planned session (training or rest) —
+ * XP summary for an already-completed planned session (training or rest) -
  * used to show the right numbers on a cold revisit, instead of the 0 that
  * client-only tracking would show after a page reload.
  */
@@ -574,11 +574,11 @@ export async function getPlannedSessionXpSummary(
 }
 
 export interface HistoryEntry {
-  /** "planned:<planned_session id>" or "free:<yyyy-mm-dd>" — opaque, used to route to the right detail page. */
+  /** "planned:<planned_session id>" or "free:<yyyy-mm-dd>" - opaque, used to route to the right detail page. */
   id: string;
   kind: "planned" | "free";
   label: string;
-  /** Date used for sorting/display — completed_at for a planned session, the day itself for a free bucket. */
+  /** Date used for sorting/display - completed_at for a planned session, the day itself for a free bucket. */
   date: string;
   exerciseCount: number;
   xpEarned: number;
@@ -588,7 +588,7 @@ export interface HistoryEntry {
 /**
  * Unified, reverse-chronological history: finalized planned sessions
  * (rounds/circuits/compétences combinés dans le planificateur) and free-form
- * logs (hors planning, via /log/libre) grouped by day — chacun devient une
+ * logs (hors planning, via /log/libre) grouped by day - chacun devient une
  * "carte séance" avec un résumé rapide, le détail vivant dans
  * getPlannedSessionHistoryDetail/getFreeSessionHistoryDetail.
  */
@@ -620,7 +620,7 @@ export async function getHistoryEntries(userId: string, limit = 30): Promise<His
     })
   );
 
-  // A "free" log is a sessions row no planned_sets points back to — logged
+  // A "free" log is a sessions row no planned_sets points back to - logged
   // outside the day plan (via /log/libre, or /log when no plan exists).
   const { data: usedSessionIdRows } = await supabase
     .from("planned_sets")
@@ -634,7 +634,7 @@ export async function getHistoryEntries(userId: string, limit = 30): Promise<His
     .select("id, performed_at, xp_earned, exercise_id")
     .eq("user_id", userId)
     .order("performed_at", { ascending: false })
-    .limit(500); // generous cap — grouped by day below, most users won't get near this
+    .limit(500); // generous cap - grouped by day below, most users won't get near this
 
   const freeByDay = new Map<string, { xp: number; exerciseIds: Set<string>; latest: string }>();
   for (const s of allSessions ?? []) {
@@ -669,7 +669,7 @@ export interface HistorySetDetail {
   performedAt: string;
 }
 
-/** Every actual performance logged within a finalized planned session — one row per validated set. */
+/** Every actual performance logged within a finalized planned session - one row per validated set. */
 export async function getPlannedSessionHistoryDetail(
   userId: string,
   plannedSessionId: string
@@ -746,7 +746,7 @@ export async function getFreeSessionHistoryDetail(userId: string, day: string): 
 
 /**
  * When a tier is mastered (in-app validation or self-report), every lower
- * tier of the same family is marked mastered too — a player who can do tier
+ * tier of the same family is marked mastered too - a player who can do tier
  * 3 obviously could do tiers 1 and 2, no need to make them re-prove it.
  * Never overwrites an already-mastered row (keeps its original mastered_at)
  * and never touches xp_in_exercise (no XP retroactively granted for tiers
@@ -803,10 +803,10 @@ export async function cascadeMasterLowerTiers(
 /**
  * The reverse of cascadeMasterLowerTiers, for when a level is invalidated
  * (app/tree/actions.ts::unmasterLevel): every higher tier of the same
- * family that's currently mastered gets invalidated too — you can't
+ * family that's currently mastered gets invalidated too - you can't
  * legitimately have tier 4 without tier 2. Only touches rows that are
- * actually mastered (nothing to do otherwise), and — same as the
- * master-cascade direction — never touches xp_in_exercise.
+ * actually mastered (nothing to do otherwise), and - same as the
+ * master-cascade direction - never touches xp_in_exercise.
  */
 export async function cascadeUnmasterHigherTiers(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -882,11 +882,11 @@ async function isGivenPhaseComplete(
 
 /**
  * Checks whether the player just completed their current phase (every
- * compétence technique maxed + every circuit of that phase validated — see
+ * compétence technique maxed + every circuit of that phase validated - see
  * lib/phase-progress.ts) and, if so, advances profiles.current_phase_id to
  * the next one. No-op if not yet placed by onboarding or already at the
  * last phase. Called after any event that could complete a phase (mastering
- * a level, finishing a session) — see app/log/actions.ts and
+ * a level, finishing a session) - see app/log/actions.ts and
  * app/plan/actions.ts.
  */
 export async function maybeAdvancePhase(
@@ -894,7 +894,7 @@ export async function maybeAdvancePhase(
   userId: string
 ): Promise<{ newPhaseId: string; newPhaseName: string } | null> {
   // Never let a hiccup here fail the caller's already-successful action
-  // (mastering a level, finishing a session) — same reasoning as
+  // (mastering a level, finishing a session) - same reasoning as
   // awardNewBadges.
   try {
     const { data: profileRow } = await supabase
@@ -927,16 +927,16 @@ export async function maybeAdvancePhase(
 }
 
 /**
- * The reverse check — called after invalidating a mastered level or a
+ * The reverse check - called after invalidating a mastered level or a
  * circuit completion (see app/tree/actions.ts): if the phase just before
  * the player's current one no longer meets its own completion criteria
  * (the level/circuit just invalidated was what completed it), the player
- * drops back to that previous phase. Only steps back one phase at a time —
+ * drops back to that previous phase. Only steps back one phase at a time -
  * doesn't cascade further even if an earlier phase would also now fail,
  * since re-checking every earlier phase on every invalidation is overkill
  * for what's meant as an occasional correction, not a live-recomputed state.
  * If the player's manually-chosen theme (theme_zone_id) pointed at a zone
- * beyond the phase they're dropping to, it's cleared too — it would
+ * beyond the phase they're dropping to, it's cleared too - it would
  * otherwise show a zone the player no longer qualifies for.
  */
 export async function maybeRevertPhase(
@@ -987,7 +987,7 @@ const DEFAULT_USERNAME_BASE = "aventurier";
 
 /**
  * Creates a profiles row with a default username if this user doesn't have
- * one yet — no-op otherwise. Takes an already-authenticated client (same
+ * one yet - no-op otherwise. Takes an already-authenticated client (same
  * pattern as logExercisePerformance) rather than constructing its own, so
  * it can run mid-login before the new session cookie is fully settled.
  */

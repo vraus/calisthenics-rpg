@@ -1,4 +1,4 @@
--- Calisthenics RPG — généralise hiit_templates en session_templates : HIIT
+-- Calisthenics RPG - généralise hiit_templates en session_templates : HIIT
 -- n'est plus un type de jour à part, mais un template parmi d'autres à
 -- venir (choisi quand le jour est "session", au même titre que "Custom").
 -- Remplace 0009_hiit_template_slug.sql (jamais appliquée) : même rôle

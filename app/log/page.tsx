@@ -11,7 +11,7 @@ import { getTodayDayOfWeek, getWeekStart } from "@/lib/week";
 import LogForm from "./log-form";
 import SessionRunner from "../plan/session-runner";
 
-export const metadata = { title: "Séance — Calisthenics RPG" };
+export const metadata = { title: "Séance - Calisthenics RPG" };
 
 export default async function LogPage() {
   const userId = await getAuthenticatedUserId();
@@ -59,7 +59,7 @@ export default async function LogPage() {
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full">
       <h1 className="font-display text-xl font-bold mb-1">Nouvelle séance</h1>
       <p className="text-sm text-muted mb-6">
-        Rien de planifié aujourd&apos;hui — choisis un exercice et renseigne ta performance.
+        Rien de planifié aujourd&apos;hui - choisis un exercice et renseigne ta performance.
       </p>
       <LogForm groups={groups} />
     </main>

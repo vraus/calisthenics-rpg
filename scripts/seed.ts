@@ -7,7 +7,7 @@
  *
  * Usage : npm run seed
  * Requiert dans l'environnement : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
- * (la clé service role, pas la clé anon — ce script contourne RLS pour
+ * (la clé service role, pas la clé anon - ce script contourne RLS pour
  * écrire dans les tables de référence).
  */
 import { readFileSync } from "node:fs";
@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
+import { familyMasteryBadgeSlug, phaseCompleteBadgeSlug } from "../lib/badges";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -202,6 +203,32 @@ async function main() {
   }
 
   console.log(`✓ Badges (${badgesData.badges.length})`);
+
+  // 3bis. Badges dynamiques par compétence technique et par phase - dérivés
+  // directement de trees.json/phases.json plutôt que d'un fichier séparé,
+  // pour ne jamais désynchroniser des noms de familles/phases (voir
+  // lib/badges.ts pour la règle de déblocage de chacun).
+  const familyBadgeRows = treesData.families.map((family, i) => ({
+    slug: familyMasteryBadgeSlug(family.slug),
+    name: `Maître : ${family.name}`,
+    description: `A atteint le niveau max de la compétence technique "${family.name}".`,
+    sort_order: 100 + i,
+  }));
+  const phaseBadgeRows = phasesData.phases.map((phase, i) => ({
+    slug: phaseCompleteBadgeSlug(phase.slug),
+    name: `Phase conquise : ${phase.name}`,
+    description: `A rempli toutes les conditions pour quitter "${phase.name}".`,
+    sort_order: 200 + i,
+  }));
+
+  const { error: dynamicBadgesError } = await supabase
+    .from("badges")
+    .upsert([...familyBadgeRows, ...phaseBadgeRows], { onConflict: "slug" });
+  if (dynamicBadgesError) {
+    throw new Error(`Échec upsert badges dynamiques: ${dynamicBadgesError.message}`);
+  }
+
+  console.log(`✓ Badges dynamiques (${familyBadgeRows.length} compétences, ${phaseBadgeRows.length} phases)`);
 
   // 4. Mouvements de circuit (sans famille/tier) + leurs variantes. Deux
   // passes : d'abord les mouvements de base (pour avoir leur id), puis les

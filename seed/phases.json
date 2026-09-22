@@ -2,19 +2,19 @@
   "phases": [
     {
       "slug": "phase-1-fondations",
-      "name": "Phase 1 — Fondations",
+      "name": "Phase 1 - Fondations",
       "sortOrder": 1,
       "prerequisitesText": null
     },
     {
       "slug": "phase-2-ascension",
-      "name": "Phase 2 — Ascension",
+      "name": "Phase 2 - Ascension",
       "sortOrder": 2,
       "prerequisitesText": "10 tractions, 20 pompes, 10 pistol squats, 1 min de gainage, 12 dips, 10 secondes de L-Sit"
     },
     {
       "slug": "phase-3-maitrise",
-      "name": "Phase 3 — Maîtrise",
+      "name": "Phase 3 - Maîtrise",
       "sortOrder": 3,
       "prerequisitesText": "5 sec de back lever, 5 sec de drapeau par côté, 5 sec de front lever, 20 sec d'équilibre, 5 sec de 90°, 5 sec de muscle up"
     }

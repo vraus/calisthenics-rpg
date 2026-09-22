@@ -1,4 +1,4 @@
--- Calisthenics RPG — planification par jour (lundi..dimanche) + jours de repos
+-- Calisthenics RPG - planification par jour (lundi..dimanche) + jours de repos
 -- Altère 0003_planning.sql de façon additive : nouvelles colonnes à défaut,
 -- rien de supprimé.
 

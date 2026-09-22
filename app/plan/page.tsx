@@ -5,10 +5,10 @@ import { addWeeks, getWeekStart } from "@/lib/week";
 import { DAY_LABELS, type DayOfWeek, type WeeklyPlan } from "@/lib/types";
 import CopyWeekButton from "./copy-week-button";
 
-export const metadata = { title: "Plan de la semaine — Calisthenics RPG" };
+export const metadata = { title: "Plan de la semaine - Calisthenics RPG" };
 
 // How far ahead to look for an already-planned week when deciding how many
-// tiles to show. Generous but bounded — nobody plans months ahead here.
+// tiles to show. Generous but bounded - nobody plans months ahead here.
 const MAX_WEEKS_AHEAD = 12;
 
 function formatWeek(weekStart: string) {
@@ -39,7 +39,7 @@ function WeekTile({
     return (
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium text-muted">
-          {title} — {formatWeek(weekStart)}
+          {title} - {formatWeek(weekStart)}
         </p>
         <Link
           href={`/plan/week/${weekStart}/edit`}
@@ -58,7 +58,7 @@ function WeekTile({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted">
-          {title} — {formatWeek(weekStart)}
+          {title} - {formatWeek(weekStart)}
         </p>
         <Link href={`/plan/week/${weekStart}/edit`} className="text-xs text-accent-strong">
           Modifier
@@ -121,7 +121,7 @@ export default async function PlanPage() {
   const plannedSet = await getPlannedWeekStarts(userId, candidateWeekStarts);
 
   // Show every week up to the last one that actually has a plan, plus one
-  // extra "+" slot right after it — so a gap left empty by a deleted week
+  // extra "+" slot right after it - so a gap left empty by a deleted week
   // still shows its own "+", while a further-out planned week (and the
   // ability to extend past it) both stay visible too.
   let lastPlannedIndex = -1;

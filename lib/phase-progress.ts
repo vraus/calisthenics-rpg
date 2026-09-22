@@ -1,7 +1,7 @@
 /**
  * Phase-advancement rule. No UI or Supabase dependency on purpose (same
  * design as lib/xp.ts, lib/badges.ts): a phase is complete once every
- * compétence technique of that phase is maxed out (top tier mastered — via
+ * compétence technique of that phase is maxed out (top tier mastered - via
  * cascadeMasterLowerTiers, that already implies every lower tier too) AND
  * every circuit of that phase has been validated at least once.
  */

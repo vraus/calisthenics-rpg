@@ -1,4 +1,4 @@
--- Calisthenics RPG — nombre de tours (répétitions du circuit complet) pour
+-- Calisthenics RPG - nombre de tours (répétitions du circuit complet) pour
 -- une séance/jour HIIT, + pause entre deux tours. Additif, complète
 -- 0007_hiit_and_rest_times.sql (repos par exercice) sans le modifier.
 

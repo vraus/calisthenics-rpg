@@ -9,7 +9,7 @@ export const REMEMBER_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
  * `cookieOptions` and then unconditionally overwrites `maxAge` again after),
  * so the `cookieOptions` constructor option can't be used to shorten it.
  * Callers must instead override `maxAge` themselves, in their own `setAll`
- * cookie handler, on the options object @supabase/ssr hands back — which is
+ * cookie handler, on the options object @supabase/ssr hands back - which is
  * what this does.
  */
 export function withRememberMaxAge(

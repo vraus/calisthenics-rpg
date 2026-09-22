@@ -14,7 +14,7 @@ import { familyLevel, levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import { getTodayDayOfWeek, getWeekStart } from "@/lib/week";
 
-export const metadata = { title: "Dashboard — Calisthenics RPG" };
+export const metadata = { title: "Dashboard - Calisthenics RPG" };
 
 export default async function DashboardPage() {
   const userId = await getAuthenticatedUserId();
