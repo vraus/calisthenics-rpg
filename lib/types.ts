@@ -197,4 +197,8 @@ export interface Profile {
 
 export interface ProfileSummary extends Profile {
   level: number;
+  /** Nom de la phase de progression actuelle (annuaire : "où en sont les autres joueurs") - absent si pas encore placé. */
+  currentPhaseName?: string;
+  /** sortOrder de la phase actuelle, pour l'afficher comme "Zone N". */
+  currentZoneNumber?: number;
 }

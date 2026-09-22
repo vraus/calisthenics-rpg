@@ -35,7 +35,15 @@ export default async function AnnuairePage() {
                 {p.username}
                 {p.userId === userId ? <span className="text-muted"> (toi)</span> : null}
               </span>
-              <span className="text-sm text-muted">niveau {p.level}</span>
+              <span className="text-sm text-muted text-right">
+                niveau {p.level}
+                {p.currentZoneNumber ? (
+                  <>
+                    {" "}
+                    · <span className="text-accent-strong">Zone {p.currentZoneNumber}</span>
+                  </>
+                ) : null}
+              </span>
             </Link>
           </li>
         ))}

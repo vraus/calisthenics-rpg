@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildFamilyBadgeDefinitions,
   buildPhaseBadgeDefinitions,
+  computeBadgeProgress,
   evaluateNewBadges,
   familyMasteryBadgeSlug,
   phaseCompleteBadgeSlug,
@@ -104,5 +105,28 @@ describe("buildPhaseBadgeDefinitions", () => {
         defs
       )
     ).toContain(slug);
+  });
+});
+
+describe("computeBadgeProgress", () => {
+  it("computes a family mastery badge's percent from masteredCount/totalCount", () => {
+    const ctx = baseContext({
+      totalExercisesByFamily: { tractions: 4 },
+      masteredSlugsByFamily: { tractions: new Set(["a", "b"]) },
+    });
+    const entries = computeBadgeProgress(ctx, ["tractions"], {});
+    const entry = entries.find((e) => e.slug === familyMasteryBadgeSlug("tractions"));
+    expect(entry?.percent).toBe(50);
+  });
+
+  it("passes through a phase's percent from phasePercentBySlug", () => {
+    const entries = computeBadgeProgress(baseContext(), [], { "phase-1-fondations": 75 });
+    const entry = entries.find((e) => e.slug === phaseCompleteBadgeSlug("phase-1-fondations"));
+    expect(entry?.percent).toBe(75);
+  });
+
+  it("clamps centurion's percent at 100 past its threshold", () => {
+    const entries = computeBadgeProgress(baseContext({ sessionCount: 150 }), [], {});
+    expect(entries.find((e) => e.slug === "centurion")?.percent).toBe(100);
   });
 });

@@ -4,6 +4,7 @@ import {
   computeSessionXp,
   familyLevel,
   globalLevel,
+  globalMasteryProgress,
   InvalidSessionError,
   levelFromXp,
   meetsUnlockThreshold,
@@ -188,5 +189,25 @@ describe("buildMasteredByFamily", () => {
     expect(result).toEqual([
       { familyName: "Tractions", masteredCount: 0, totalCount: 1, masteredNames: [] },
     ]);
+  });
+});
+
+describe("globalMasteryProgress", () => {
+  it("combines mastered exercises and completed circuits into one percentage", () => {
+    expect(globalMasteryProgress(5, 10, 1, 2)).toEqual({
+      masteredExercises: 5,
+      totalExercises: 10,
+      completedCircuits: 1,
+      totalCircuits: 2,
+      overallPercent: 50, // (5+1)/(10+2)
+    });
+  });
+
+  it("is 100% once everything is mastered/completed", () => {
+    expect(globalMasteryProgress(10, 10, 2, 2).overallPercent).toBe(100);
+  });
+
+  it("is 0% with nothing to master/complete", () => {
+    expect(globalMasteryProgress(0, 0, 0, 0).overallPercent).toBe(0);
   });
 });

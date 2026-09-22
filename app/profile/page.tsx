@@ -3,15 +3,17 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserEmail, getAuthenticatedUserId } from "@/lib/auth";
 import {
   ensureProfile,
+  getCompletedCircuitIds,
   getFamiliesWithExercises,
   getPhases,
   getProfile,
   getRecentSessions,
   getRestDayCompletionDates,
+  getSessionTemplates,
   getUserProgress,
   getXpBonusTotal,
 } from "@/lib/data";
-import { buildMasteredByFamily, levelFromXp } from "@/lib/xp";
+import { buildMasteredByFamily, globalMasteryProgress, levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import ProfileView from "./profile-view";
 import UsernameForm from "./username-form";
@@ -50,18 +52,31 @@ export default async function ProfilePage() {
 
   await ensureProfile(supabase, userId, userEmail);
 
-  const [profile, phases, familiesWithExercises, progress, sessions, badgesResult, earnedResult, bonusXp, restDayDates] =
-    await Promise.all([
-      getProfile(userId),
-      getPhases(),
-      getFamiliesWithExercises(),
-      getUserProgress(userId),
-      getRecentSessions(userId, 1000) as Promise<SessionRow[]>,
-      supabase.from("badges").select("slug, name, description, sort_order").order("sort_order"),
-      supabase.from("user_badges").select("earned_at, badges(slug)").eq("user_id", userId),
-      getXpBonusTotal(userId),
-      getRestDayCompletionDates(userId),
-    ]);
+  const [
+    profile,
+    phases,
+    familiesWithExercises,
+    progress,
+    sessions,
+    badgesResult,
+    earnedResult,
+    bonusXp,
+    restDayDates,
+    sessionTemplates,
+    completedCircuitIds,
+  ] = await Promise.all([
+    getProfile(userId),
+    getPhases(),
+    getFamiliesWithExercises(),
+    getUserProgress(userId),
+    getRecentSessions(userId, 1000) as Promise<SessionRow[]>,
+    supabase.from("badges").select("slug, name, description, sort_order").order("sort_order"),
+    supabase.from("user_badges").select("earned_at, badges(slug)").eq("user_id", userId),
+    getXpBonusTotal(userId),
+    getRestDayCompletionDates(userId),
+    getSessionTemplates(),
+    getCompletedCircuitIds(userId),
+  ]);
 
   const badges: Badge[] = badgesResult.data ?? [];
   const earnedAtBySlug = new Map<string, string>(
@@ -76,6 +91,14 @@ export default async function ProfilePage() {
   const global = levelFromXp(totalXp);
   const streak = computeStreak([...sessions.map((s) => s.performed_at), ...restDayDates]);
   const masteredByFamily = buildMasteredByFamily(familiesWithExercises, progress);
+  const totalExercises = masteredByFamily.reduce((sum, f) => sum + f.totalCount, 0);
+  const masteredExercisesCount = masteredByFamily.reduce((sum, f) => sum + f.masteredCount, 0);
+  const mastery = globalMasteryProgress(
+    masteredExercisesCount,
+    totalExercises,
+    completedCircuitIds.size,
+    sessionTemplates.length
+  );
 
   const bestByExercise = new Map<string, { value: number; unit: "reps" | "s" }>();
   for (const s of sessions) {
@@ -108,6 +131,7 @@ export default async function ProfilePage() {
         totalXp={totalXp}
         sessionCount={sessions.length}
         streak={streak}
+        mastery={mastery}
         masteredByFamily={masteredByFamily}
         badges={badges.map((b) => ({ ...b, earnedAt: earnedAtBySlug.get(b.slug) }))}
         records={[...bestByExercise.entries()].map(([name, r]) => ({ name, ...r }))}

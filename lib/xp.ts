@@ -169,6 +169,33 @@ export function buildMasteredByFamily(
   });
 }
 
+export interface MasteryProgress {
+  masteredExercises: number;
+  totalExercises: number;
+  completedCircuits: number;
+  totalCircuits: number;
+  /** Exercices maîtrisés + circuits accomplis, sur le total des deux - un seul nombre pour un sens de progression général. */
+  overallPercent: number;
+}
+
+/** For the profile's global progress bar: % of compétences techniques mastered + % of circuits done, combined. */
+export function globalMasteryProgress(
+  masteredExercises: number,
+  totalExercises: number,
+  completedCircuits: number,
+  totalCircuits: number
+): MasteryProgress {
+  const totalUnits = totalExercises + totalCircuits;
+  const doneUnits = masteredExercises + completedCircuits;
+  return {
+    masteredExercises,
+    totalExercises,
+    completedCircuits,
+    totalCircuits,
+    overallPercent: totalUnits > 0 ? Math.round((doneUnits / totalUnits) * 100) : 0,
+  };
+}
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }

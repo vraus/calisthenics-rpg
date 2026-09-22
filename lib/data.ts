@@ -18,8 +18,10 @@ import type {
   UserProgress,
   WeeklyPlan,
 } from "@/lib/types";
-import { levelFromXp } from "@/lib/xp";
-import { isPhaseComplete } from "@/lib/phase-progress";
+import { globalLevel, levelFromXp } from "@/lib/xp";
+import { isPhaseComplete, phaseCompletionPercent } from "@/lib/phase-progress";
+import { computeBadgeProgress, type BadgeContext } from "@/lib/badges";
+import { computeStreak } from "@/lib/streak";
 
 /**
  * Data-access layer: every read here is scoped to the authenticated user via
@@ -880,6 +882,119 @@ async function isGivenPhaseComplete(
   });
 }
 
+export interface UpcomingBadge {
+  slug: string;
+  name: string;
+  description: string;
+  /** 0-100. */
+  percent: number;
+}
+
+/**
+ * The badges (not yet earned) the player is closest to unlocking, across
+ * every category (compétence technique, phase, meta) - for the dashboard's
+ * "prochains badges" widget, which replaces the old flat family list.
+ */
+export async function getUpcomingBadges(userId: string, limit = 4): Promise<UpcomingBadge[]> {
+  const supabase = await createClient();
+
+  const [families, exercises, phases, sessionTemplates, progress, sessionCount, sessionDates, restDayDates, completedCircuitIds, earnedRows, badgeRows] =
+    await Promise.all([
+      getFamilies(),
+      getAllExercises(),
+      getPhases(),
+      getSessionTemplates(),
+      getUserProgress(userId),
+      getSessionCount(userId),
+      getSessionDatesForStreak(userId),
+      getRestDayCompletionDates(userId),
+      getCompletedCircuitIds(userId),
+      supabase.from("user_badges").select("badges(slug)").eq("user_id", userId),
+      supabase.from("badges").select("slug, name, description"),
+    ]);
+
+  const familySlugById = new Map(families.map((f) => [f.id, f.slug]));
+  const masteredExerciseSlugs = new Set<string>();
+  const masteredSlugsByFamily: Record<string, Set<string>> = {};
+  const totalExercisesByFamily: Record<string, number> = {};
+  const exerciseById = new Map(exercises.map((ex) => [ex.id, ex]));
+
+  for (const ex of exercises) {
+    if (!ex.familyId) continue;
+    const familySlug = familySlugById.get(ex.familyId);
+    if (!familySlug) continue;
+    totalExercisesByFamily[familySlug] = (totalExercisesByFamily[familySlug] ?? 0) + 1;
+  }
+  for (const p of progress) {
+    if (!p.mastered) continue;
+    const exercise = exerciseById.get(p.exerciseId);
+    if (!exercise) continue;
+    masteredExerciseSlugs.add(exercise.slug);
+    if (!exercise.familyId) continue;
+    const familySlug = familySlugById.get(exercise.familyId);
+    if (!familySlug) continue;
+    (masteredSlugsByFamily[familySlug] ??= new Set()).add(exercise.slug);
+  }
+
+  const masteredExerciseIds = new Set(progress.filter((p) => p.mastered).map((p) => p.exerciseId));
+
+  const phasePercentBySlug: Record<string, number> = {};
+  for (const phase of phases) {
+    const familiesInPhase = families.filter((f) => f.phaseId === phase.id);
+    const topTierExerciseIdByFamily: string[] = [];
+    for (const family of familiesInPhase) {
+      let top: Exercise | undefined;
+      for (const ex of exercises) {
+        if (ex.familyId !== family.id) continue;
+        if (!top || (ex.tier ?? 0) > (top.tier ?? 0)) top = ex;
+      }
+      if (top) topTierExerciseIdByFamily.push(top.id);
+    }
+    const circuitIds = sessionTemplates.filter((t) => t.phaseId === phase.id).map((t) => t.id);
+    phasePercentBySlug[phase.slug] = phaseCompletionPercent({
+      topTierExerciseIdByFamily,
+      masteredExerciseIds,
+      circuitIds,
+      completedCircuitIds,
+    });
+  }
+
+  const ctx: BadgeContext = {
+    sessionCount,
+    currentStreak: computeStreak([...sessionDates, ...restDayDates]).current,
+    globalLevel: globalLevel(progress).level,
+    masteredExerciseSlugs,
+    masteredSlugsByFamily,
+    totalExercisesByFamily,
+    completedPhaseSlugs: new Set(),
+  };
+
+  const progressEntries = computeBadgeProgress(
+    ctx,
+    families.map((f) => f.slug),
+    phasePercentBySlug
+  );
+
+  const earnedSlugs = new Set(
+    (earnedRows.data ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((row: any) => row.badges?.slug as string | undefined)
+      .filter((s): s is string => Boolean(s))
+  );
+  const badgeInfoBySlug = new Map(
+    (badgeRows.data ?? []).map((b) => [b.slug, { name: b.name as string, description: b.description as string }])
+  );
+
+  return progressEntries
+    .filter((e) => !earnedSlugs.has(e.slug) && badgeInfoBySlug.has(e.slug))
+    .sort((a, b) => b.percent - a.percent)
+    .slice(0, limit)
+    .map((e) => {
+      const info = badgeInfoBySlug.get(e.slug)!;
+      return { slug: e.slug, name: info.name, description: info.description, percent: e.percent };
+    });
+}
+
 /**
  * Checks whether the player just completed their current phase (every
  * compétence technique maxed + every circuit of that phase validated - see
@@ -1057,11 +1172,13 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
 /** Every profile with its global level (own progress XP + bonus XP), for the directory. */
 export async function getAllProfilesWithLevel(): Promise<ProfileSummary[]> {
   const supabase = await createClient();
-  const [{ data: profileRows }, { data: progressRows }, { data: bonusRows }] = await Promise.all([
-    supabase.from("profiles").select("user_id, username"),
-    supabase.from("user_progress").select("user_id, xp_in_exercise"),
-    supabase.from("xp_bonuses").select("user_id, amount"),
-  ]);
+  const [{ data: profileRows }, { data: progressRows }, { data: bonusRows }, { data: phaseRows }] =
+    await Promise.all([
+      supabase.from("profiles").select("user_id, username, current_phase_id"),
+      supabase.from("user_progress").select("user_id, xp_in_exercise"),
+      supabase.from("xp_bonuses").select("user_id, amount"),
+      supabase.from("phases").select("id, name, sort_order"),
+    ]);
 
   const xpByUser = new Map<string, number>();
   for (const p of progressRows ?? []) {
@@ -1070,13 +1187,19 @@ export async function getAllProfilesWithLevel(): Promise<ProfileSummary[]> {
   for (const b of bonusRows ?? []) {
     xpByUser.set(b.user_id, (xpByUser.get(b.user_id) ?? 0) + Number(b.amount));
   }
+  const phaseById = new Map((phaseRows ?? []).map((ph) => [ph.id, ph]));
 
   return (profileRows ?? [])
-    .map((p) => ({
-      userId: p.user_id,
-      username: p.username,
-      level: levelFromXp(xpByUser.get(p.user_id) ?? 0).level,
-    }))
+    .map((p) => {
+      const phase = p.current_phase_id ? phaseById.get(p.current_phase_id) : undefined;
+      return {
+        userId: p.user_id,
+        username: p.username,
+        level: levelFromXp(xpByUser.get(p.user_id) ?? 0).level,
+        currentPhaseName: phase?.name,
+        currentZoneNumber: phase?.sort_order,
+      };
+    })
     .sort((a, b) => b.level - a.level);
 }
 

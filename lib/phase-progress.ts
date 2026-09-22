@@ -20,3 +20,13 @@ export function isPhaseComplete(input: PhaseCompletionInput): boolean {
   const allCircuitsDone = input.circuitIds.every((id) => input.completedCircuitIds.has(id));
   return allFamiliesMaxed && allCircuitsDone;
 }
+
+/** Same units as isPhaseComplete (maxed families + validated circuits), as a 0-100 percentage instead of a boolean - for the "prochains badges" dashboard widget. */
+export function phaseCompletionPercent(input: PhaseCompletionInput): number {
+  const totalUnits = input.topTierExerciseIdByFamily.length + input.circuitIds.length;
+  if (totalUnits === 0) return 100;
+  const doneUnits =
+    input.topTierExerciseIdByFamily.filter((id) => input.masteredExerciseIds.has(id)).length +
+    input.circuitIds.filter((id) => input.completedCircuitIds.has(id)).length;
+  return Math.round((doneUnits / totalUnits) * 100);
+}

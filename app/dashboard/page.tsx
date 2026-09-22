@@ -2,15 +2,18 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import {
+  getCompletedCircuitIds,
   getFamiliesWithExercises,
   getProfile,
   getRecentSessions,
   getRestDayCompletionDates,
+  getSessionTemplates,
+  getUpcomingBadges,
   getUserProgress,
   getWeeklyPlan,
   getXpBonusTotal,
 } from "@/lib/data";
-import { familyLevel, levelFromXp } from "@/lib/xp";
+import { buildMasteredByFamily, globalMasteryProgress, levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import { getTodayDayOfWeek, getWeekStart } from "@/lib/week";
 
@@ -33,16 +36,29 @@ export default async function DashboardPage() {
   const profile = await getProfile(userId);
   if (profile && !profile.onboardingCompletedAt) redirect("/onboarding");
 
-  const [familiesWithExercises, progress, recentSessions, allSessions, bonusXp, restDayDates, plan] =
-    await Promise.all([
-      getFamiliesWithExercises(),
-      getUserProgress(userId),
-      getRecentSessions(userId, 5),
-      getRecentSessions(userId, 1000),
-      getXpBonusTotal(userId),
-      getRestDayCompletionDates(userId),
-      getWeeklyPlan(userId, getWeekStart()),
-    ]);
+  const [
+    familiesWithExercises,
+    progress,
+    recentSessions,
+    allSessions,
+    bonusXp,
+    restDayDates,
+    plan,
+    sessionTemplates,
+    completedCircuitIds,
+    upcomingBadges,
+  ] = await Promise.all([
+    getFamiliesWithExercises(),
+    getUserProgress(userId),
+    getRecentSessions(userId, 5),
+    getRecentSessions(userId, 1000),
+    getXpBonusTotal(userId),
+    getRestDayCompletionDates(userId),
+    getWeeklyPlan(userId, getWeekStart()),
+    getSessionTemplates(),
+    getCompletedCircuitIds(userId),
+    getUpcomingBadges(userId, 4),
+  ]);
 
   const todaySession = plan?.sessions.find((s) => s.dayOfWeek === getTodayDayOfWeek());
   const logButtonLabel = !todaySession
@@ -57,6 +73,16 @@ export default async function DashboardPage() {
   const global = levelFromXp(totalXp);
   const globalXpTotal = global.xpIntoLevel + global.xpToNextLevel;
   const progressPct = globalXpTotal > 0 ? Math.round((global.xpIntoLevel / globalXpTotal) * 100) : 0;
+
+  const masteredByFamily = buildMasteredByFamily(familiesWithExercises, progress);
+  const totalExercises = masteredByFamily.reduce((sum, f) => sum + f.totalCount, 0);
+  const masteredExercisesCount = masteredByFamily.reduce((sum, f) => sum + f.masteredCount, 0);
+  const mastery = globalMasteryProgress(
+    masteredExercisesCount,
+    totalExercises,
+    completedCircuitIds.size,
+    sessionTemplates.length
+  );
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
@@ -83,26 +109,40 @@ export default async function DashboardPage() {
         </p>
       </section>
 
-      <section>
-        <h2 className="text-sm font-medium text-muted mb-2">Familles</h2>
-        <div className="flex flex-col gap-2">
-          {familiesWithExercises.map(({ family, exercises }) => {
-            const familyProgress = progress.filter((p) =>
-              exercises.some((ex) => ex.id === p.exerciseId)
-            );
-            const level = familyLevel(familyProgress);
-            return (
-              <Link
-                key={family.id}
-                href={`/tree/${family.slug}`}
-                className="panel-rpg p-3 flex items-center justify-between hover:border-accent transition-colors"
-              >
-                <span className="font-medium text-sm">{family.name}</span>
-                <span className="text-sm text-muted">niveau {level.level}</span>
-              </Link>
-            );
-          })}
+      <section className="panel-rpg p-5">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-muted">Progression générale</p>
+          <p className="font-display text-lg font-bold text-accent-strong">{mastery.overallPercent}%</p>
         </div>
+        <div className="h-2 rounded-full bg-locked overflow-hidden">
+          <div className="h-full bg-accent" style={{ width: `${mastery.overallPercent}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          {mastery.masteredExercises}/{mastery.totalExercises} niveaux maîtrisés · {mastery.completedCircuits}/
+          {mastery.totalCircuits} circuits accomplis
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-medium text-muted mb-2">Prochains badges</h2>
+        {upcomingBadges.length === 0 ? (
+          <p className="text-sm text-muted">Rien à débloquer pour l&apos;instant.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {upcomingBadges.map((badge) => (
+              <div key={badge.slug} className="panel-rpg p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm">{badge.name}</span>
+                  <span className="text-sm text-muted">{badge.percent}%</span>
+                </div>
+                <p className="text-xs text-muted mb-1.5">{badge.description}</p>
+                <div className="h-1.5 rounded-full bg-locked overflow-hidden">
+                  <div className="h-full bg-gold" style={{ width: `${badge.percent}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section>

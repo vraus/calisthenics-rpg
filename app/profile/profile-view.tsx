@@ -18,11 +18,20 @@ interface PersonalRecord {
   unit: "reps" | "s";
 }
 
+interface MasteryProgress {
+  masteredExercises: number;
+  totalExercises: number;
+  completedCircuits: number;
+  totalCircuits: number;
+  overallPercent: number;
+}
+
 export default function ProfileView({
   level,
   totalXp,
   sessionCount,
   streak,
+  mastery,
   masteredByFamily,
   badges,
   records,
@@ -31,6 +40,7 @@ export default function ProfileView({
   totalXp: number;
   sessionCount: number;
   streak: { current: number; longest: number };
+  mastery: MasteryProgress;
   masteredByFamily: MasteredFamily[];
   badges: BadgeEntry[];
   records?: PersonalRecord[];
@@ -57,6 +67,20 @@ export default function ProfileView({
             {streak.current} 🔥 <span className="font-sans text-sm text-muted">(record {streak.longest})</span>
           </p>
         </div>
+      </section>
+
+      <section className="panel-rpg p-5">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-muted">Progression générale</p>
+          <p className="font-display text-lg font-bold text-accent-strong">{mastery.overallPercent}%</p>
+        </div>
+        <div className="h-2 rounded-full bg-locked overflow-hidden">
+          <div className="h-full bg-accent" style={{ width: `${mastery.overallPercent}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          {mastery.masteredExercises}/{mastery.totalExercises} niveaux maîtrisés · {mastery.completedCircuits}/
+          {mastery.totalCircuits} circuits accomplis
+        </p>
       </section>
 
       <section>

@@ -79,3 +79,58 @@ export function evaluateNewBadges(
     .filter((badge) => !alreadyEarnedSlugs.has(badge.slug) && badge.check(ctx))
     .map((badge) => badge.slug);
 }
+
+export interface BadgeProgressEntry {
+  slug: string;
+  /** 0-100, clamped. */
+  percent: number;
+}
+
+/**
+ * How close the player is to every badge (earned or not) - for the "prochains
+ * badges" dashboard widget. `phasePercentBySlug` comes from
+ * lib/phase-progress.ts::phaseCompletionPercent, computed once per phase by
+ * the caller (needs each phase's own family/circuit lists, which this
+ * module doesn't have).
+ */
+export function computeBadgeProgress(
+  ctx: BadgeContext,
+  familySlugs: string[],
+  phasePercentBySlug: Record<string, number>
+): BadgeProgressEntry[] {
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+  const familyKeys = Object.keys(ctx.totalExercisesByFamily);
+  const touchAToutPercent =
+    familyKeys.length === 0
+      ? 0
+      : clamp(
+          (familyKeys.filter((f) => (ctx.masteredSlugsByFamily[f]?.size ?? 0) >= 1).length / familyKeys.length) * 100
+        );
+
+  const staticEntries: BadgeProgressEntry[] = [
+    { slug: "premiere-seance", percent: clamp(ctx.sessionCount * 100) },
+    { slug: "regularite-7-jours", percent: clamp((ctx.currentStreak / 7) * 100) },
+    { slug: "un-mois-de-suite", percent: clamp((ctx.currentStreak / 30) * 100) },
+    { slug: "centurion", percent: clamp(ctx.sessionCount) },
+    { slug: "premier-muscle-up", percent: ctx.masteredExerciseSlugs.has("muscle-up-strict") ? 100 : 0 },
+    { slug: "premier-front-lever", percent: ctx.masteredExerciseSlugs.has("front-lever-strict") ? 100 : 0 },
+    { slug: "niveau-10-global", percent: clamp((ctx.globalLevel / 10) * 100) },
+    { slug: "touche-a-tout", percent: touchAToutPercent },
+  ];
+
+  const familyEntries: BadgeProgressEntry[] = familySlugs.map((familySlug) => {
+    const total = ctx.totalExercisesByFamily[familySlug];
+    return {
+      slug: familyMasteryBadgeSlug(familySlug),
+      percent: total ? clamp(((ctx.masteredSlugsByFamily[familySlug]?.size ?? 0) / total) * 100) : 0,
+    };
+  });
+
+  const phaseEntries: BadgeProgressEntry[] = Object.entries(phasePercentBySlug).map(([phaseSlug, percent]) => ({
+    slug: phaseCompleteBadgeSlug(phaseSlug),
+    percent: clamp(percent),
+  }));
+
+  return [...staticEntries, ...familyEntries, ...phaseEntries];
+}
