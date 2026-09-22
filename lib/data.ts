@@ -580,7 +580,7 @@ export async function ensureProfile(
   }
 }
 
-const PROFILE_SELECT = "user_id, username, current_phase_id, onboarding_completed_at";
+const PROFILE_SELECT = "user_id, username, current_phase_id, onboarding_completed_at, theme_zone_id";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapProfileRow(row: any): Profile {
@@ -589,6 +589,7 @@ function mapProfileRow(row: any): Profile {
     username: row.username,
     currentPhaseId: row.current_phase_id ?? undefined,
     onboardingCompletedAt: row.onboarding_completed_at ?? undefined,
+    themeZoneId: row.theme_zone_id ?? undefined,
   };
 }
 

@@ -1,21 +1,59 @@
 @import "tailwindcss";
 
 :root {
-  /* "Cuir & bronze" — v1 of the fantasy palette, still being iterated on. */
-  --background: #17120c;
-  --foreground: #f3e9d8;
-  --surface: #241c12;
-  --surface-alt: #2c2216;
-  --border: #4a3820;
-  --accent: #8b5a2b;
-  --accent-strong: #c9853f;
-  --bordeaux: #7f1d3d;
-  --muted: #b8a888;
-  --locked: #2a2014;
+  /* Zone 1 ("forêt") — vert dominant. Aussi le thème par défaut : pas de
+     [data-zone="1"] block ci-dessous, cette palette EST la zone 1, et sert
+     de repli pour les pages déconnectées/pas-encore-placées (voir
+     lib/theme.ts). --bordeaux reste rougeâtre dans toutes les zones : c'est
+     la couleur sémantique "erreur" (text-bordeaux) partout dans l'app, pas
+     une couleur de zone. */
+  --background: #0f1a10;
+  --foreground: #e8f3e2;
+  --surface: #162415;
+  --surface-alt: #1c2e1a;
+  --border: #33512e;
+  --accent: #3f7d3f;
+  --accent-strong: #5fae52;
+  --bordeaux: #7a2438;
+  --muted: #a9c2a0;
+  --locked: #172218;
   /* Reserved for reward moments (badge earned, exercise mastered, level-up)
      — distinct from --accent, which stays for ordinary interactive UI. */
   --gold: #d4af37;
   --gold-glow: rgba(212, 175, 55, 0.35);
+}
+
+/* Zone 2 ("désert") — sablé, tons chauds ocre/sable. Posé côté serveur sur
+   <html data-zone="2"> depuis lib/theme.ts, pas de bascule JS. */
+[data-zone="2"] {
+  --background: #241a0c;
+  --foreground: #f7ecd2;
+  --surface: #33260f;
+  --surface-alt: #3d2d13;
+  --border: #6b4f24;
+  --accent: #c99a3e;
+  --accent-strong: #e0b656;
+  --bordeaux: #8a3a1f;
+  --muted: #d9c193;
+  --locked: #2a2010;
+  --gold: #e8c94a;
+  --gold-glow: rgba(232, 201, 74, 0.35);
+}
+
+/* Zone 3 ("glacier") — bleu froid dominant. */
+[data-zone="3"] {
+  --background: #081420;
+  --foreground: #e3f1fb;
+  --surface: #0f1f2e;
+  --surface-alt: #142a3c;
+  --border: #24486a;
+  --accent: #2f7fc9;
+  --accent-strong: #4fa8e8;
+  --bordeaux: #7a2d4a;
+  --muted: #a8c7db;
+  --locked: #0c1a26;
+  --gold: #d9c25a;
+  --gold-glow: rgba(217, 194, 90, 0.3);
 }
 
 @theme inline {

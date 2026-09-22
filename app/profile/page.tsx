@@ -4,6 +4,7 @@ import { getAuthenticatedUserEmail, getAuthenticatedUserId } from "@/lib/auth";
 import {
   ensureProfile,
   getFamiliesWithExercises,
+  getPhases,
   getProfile,
   getRecentSessions,
   getRestDayCompletionDates,
@@ -14,6 +15,7 @@ import { buildMasteredByFamily, levelFromXp } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
 import ProfileView from "./profile-view";
 import UsernameForm from "./username-form";
+import { ThemeZoneForm } from "./theme-zone-form";
 
 export const metadata = { title: "Profil — Calisthenics RPG" };
 
@@ -48,9 +50,10 @@ export default async function ProfilePage() {
 
   await ensureProfile(supabase, userId, userEmail);
 
-  const [profile, familiesWithExercises, progress, sessions, badgesResult, earnedResult, bonusXp, restDayDates] =
+  const [profile, phases, familiesWithExercises, progress, sessions, badgesResult, earnedResult, bonusXp, restDayDates] =
     await Promise.all([
       getProfile(userId),
+      getPhases(),
       getFamiliesWithExercises(),
       getUserProgress(userId),
       getRecentSessions(userId, 1000) as Promise<SessionRow[]>,
@@ -88,9 +91,16 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-6">
-      <div>
-        <p className="text-sm text-muted mb-1">Mon profil</p>
-        <UsernameForm username={profile?.username ?? "aventurier"} />
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="text-sm text-muted mb-1">Mon profil</p>
+          <UsernameForm username={profile?.username ?? "aventurier"} />
+        </div>
+        <ThemeZoneForm
+          phases={phases}
+          activePhaseId={profile?.themeZoneId ?? profile?.currentPhaseId}
+          unlockedSortOrder={phases.find((p) => p.id === profile?.currentPhaseId)?.sortOrder ?? 1}
+        />
       </div>
 
       <ProfileView

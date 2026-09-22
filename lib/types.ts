@@ -188,6 +188,8 @@ export interface Profile {
   username: string;
   currentPhaseId?: string;
   onboardingCompletedAt?: string;
+  /** Zone dont le thème est affiché, si le joueur en a choisi un manuellement. `undefined` = suivre currentPhaseId. */
+  themeZoneId?: string;
 }
 
 export interface ProfileSummary extends Profile {

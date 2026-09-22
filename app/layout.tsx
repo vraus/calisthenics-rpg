@@ -3,6 +3,7 @@ import { Cinzel } from "next/font/google";
 import "./globals.css";
 import RegisterServiceWorker from "./register-sw";
 import NavBar from "./nav-bar";
+import { getCurrentZone } from "@/lib/theme";
 
 const cinzel = Cinzel({
   subsets: ["latin"],
@@ -27,9 +28,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const zone = await getCurrentZone();
+
   return (
-    <html lang="fr" className={`h-full antialiased ${cinzel.variable}`}>
+    <html
+      lang="fr"
+      className={`h-full antialiased ${cinzel.variable}`}
+      data-zone={zone ?? undefined}
+    >
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
         <RegisterServiceWorker />
         <NavBar />
