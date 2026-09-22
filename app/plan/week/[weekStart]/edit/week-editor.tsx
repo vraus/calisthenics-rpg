@@ -9,6 +9,7 @@ import {
   type DayOfWeek,
   type Exercise,
   type ExerciseFamily,
+  type Phase,
   type SessionTemplate,
   type WeeklyPlan,
 } from "@/lib/types";
@@ -128,18 +129,30 @@ export default function WeekEditor({
   familiesWithExercises,
   circuitOnlyExercises,
   sessionTemplates,
+  phases,
+  currentPhaseId,
 }: {
   weekStart: string;
   plan: WeeklyPlan | null;
   familiesWithExercises: Group[];
   circuitOnlyExercises: Exercise[];
   sessionTemplates: SessionTemplate[];
+  phases: Phase[];
+  currentPhaseId?: string;
 }) {
   const router = useRouter();
+  // Toutes les compétences/circuits restent utilisables (les select en
+  // dessous s'appuient sur exerciseById/sessionTemplates non filtrés pour
+  // résoudre ce qui est déjà planifié) — seul ce qui est PROPOSÉ dans les
+  // sélecteurs se filtre par zone, par défaut celle du joueur.
   const skillExercises = familiesWithExercises.flatMap((g) => g.exercises);
   const allExercises = [...skillExercises, ...circuitOnlyExercises];
   const exerciseById = new Map(allExercises.map((ex) => [ex.id, ex]));
   const firstExercise = skillExercises[0];
+  const sortedPhases = [...phases].sort((a, b) => a.sortOrder - b.sortOrder);
+  const [phaseFilter, setPhaseFilter] = useState<string | "all">(currentPhaseId ?? "all");
+  const visibleTemplates =
+    phaseFilter === "all" ? sessionTemplates : sessionTemplates.filter((t) => t.phaseId === phaseFilter);
   const [days, setDays] = useState<DayDraft[]>(() => buildInitialDays(plan));
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -322,6 +335,36 @@ export default function WeekEditor({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {sortedPhases.length > 0 ? (
+        <div className="panel-rpg p-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted shrink-0">Compétences/circuits proposés</span>
+          {sortedPhases.map((phase) => (
+            <button
+              key={phase.id}
+              type="button"
+              onClick={() => setPhaseFilter(phase.id)}
+              className={`rounded-lg px-2 py-1 border ${
+                phaseFilter === phase.id
+                  ? "border-accent text-accent-strong"
+                  : "border-border text-muted hover:border-accent"
+              }`}
+            >
+              Zone {phase.sortOrder}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setPhaseFilter("all")}
+            className={`rounded-lg px-2 py-1 border ${
+              phaseFilter === "all"
+                ? "border-accent text-accent-strong"
+                : "border-border text-muted hover:border-accent"
+            }`}
+          >
+            Toutes
+          </button>
+        </div>
+      ) : null}
       {days.map((day) => (
         <div key={day.dayOfWeek} className="panel-rpg p-4 flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -442,7 +485,19 @@ export default function WeekEditor({
                         onChange={(e) => handleExerciseChange(day.dayOfWeek, rowIndex, e.target.value)}
                         className="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-surface px-3 py-2 text-foreground text-sm"
                       >
-                        {familiesWithExercises.map(({ family, exercises }) => (
+                        {(
+                          // La famille de l'exercice déjà choisi sur cette
+                          // ligne reste visible même filtrée par une autre
+                          // zone — sinon le select retombe visuellement sur
+                          // la 1ʳᵉ option sans que la ligne change vraiment.
+                          phaseFilter === "all"
+                            ? familiesWithExercises
+                            : familiesWithExercises.filter(
+                                (g) =>
+                                  g.family.phaseId === phaseFilter ||
+                                  g.exercises.some((ex) => ex.id === row.exerciseId)
+                              )
+                        ).map(({ family, exercises }) => (
                           <optgroup key={family.id} label={family.name}>
                             {exercises.map((ex) => (
                               <option key={ex.id} value={ex.id}>
@@ -562,9 +617,9 @@ export default function WeekEditor({
                   className="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-surface px-2 py-1 text-accent-strong text-sm"
                 >
                   <option value="">
-                    {sessionTemplates.length === 0 ? "Aucun circuit disponible" : "+ Ajouter un circuit..."}
+                    {visibleTemplates.length === 0 ? "Aucun circuit dans cette zone" : "+ Ajouter un circuit..."}
                   </option>
-                  {sessionTemplates.map((t) => (
+                  {visibleTemplates.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}
                     </option>

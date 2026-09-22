@@ -1,5 +1,12 @@
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { getAllExercises, getFamiliesWithExercises, getSessionTemplates, getWeeklyPlan } from "@/lib/data";
+import {
+  getAllExercises,
+  getFamiliesWithExercises,
+  getPhases,
+  getProfile,
+  getSessionTemplates,
+  getWeeklyPlan,
+} from "@/lib/data";
 import WeekEditor from "./week-editor";
 import DeleteWeekButton from "./delete-week-button";
 
@@ -29,11 +36,13 @@ export default async function EditWeekPage({
     );
   }
 
-  const [familiesWithExercises, allExercises, plan, sessionTemplates] = await Promise.all([
+  const [familiesWithExercises, allExercises, plan, sessionTemplates, phases, profile] = await Promise.all([
     getFamiliesWithExercises(),
     getAllExercises(),
     getWeeklyPlan(userId, weekStart),
     getSessionTemplates(),
+    getPhases(),
+    getProfile(userId),
   ]);
   // Mouvements de circuit sans compétence technique (burpee, pompes diamant,
   // variantes...) — pas dans familiesWithExercises (groupé par famille), mais
@@ -53,6 +62,8 @@ export default async function EditWeekPage({
         familiesWithExercises={familiesWithExercises}
         circuitOnlyExercises={circuitOnlyExercises}
         sessionTemplates={sessionTemplates}
+        phases={phases}
+        currentPhaseId={profile?.currentPhaseId}
       />
     </main>
   );
