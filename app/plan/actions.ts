@@ -50,6 +50,15 @@ interface DayExerciseInput {
   targetPerformance: number;
   restBetweenSetsSeconds?: number;
   restAfterExerciseSeconds?: number;
+  /** Matches a DayPartInput.key — absent = the day's implicit base part (rounds/restBetweenRoundsSeconds below). */
+  partKey?: string;
+}
+
+interface DayPartInput {
+  key: string;
+  label?: string;
+  rounds: number;
+  restBetweenRoundsSeconds: number;
 }
 
 interface DayInput {
@@ -57,6 +66,8 @@ interface DayInput {
   kind: "rest" | "session" | "unset";
   label?: string;
   exercises?: DayExerciseInput[];
+  /** Parts added from a multi-part circuit — beyond the day's own implicit base part. */
+  parts?: DayPartInput[];
   rounds?: number;
   restBetweenRoundsSeconds?: number;
 }
@@ -203,6 +214,39 @@ export async function saveWeeklyPlanDays(
     }
 
     if (day.kind === "session") {
+      // Parties explicites (ajoutées depuis un circuit à plusieurs parties) :
+      // chacune a son propre nombre de tours/pause, distinct de la partie
+      // implicite de base (rounds/restBetweenRoundsSeconds ci-dessus). Créées
+      // une par une (pas de bulk insert) pour récupérer l'id de chacune et
+      // pouvoir l'associer aux exercices qui la référencent par key.
+      const partIdByKey = new Map<string, string>();
+      const partByKey = new Map<string, DayPartInput>();
+      for (const part of day.parts ?? []) {
+        if (!part.key) continue;
+        partByKey.set(part.key, part);
+        const partRounds = Math.max(1, Math.floor(Number(part.rounds) || DEFAULT_ROUNDS));
+        const partRest = Math.max(
+          0,
+          Math.floor(Number(part.restBetweenRoundsSeconds) || DEFAULT_REST_BETWEEN_ROUNDS_SECONDS)
+        );
+        const { data: partRow, error: partError } = await supabase
+          .from("planned_session_parts")
+          .insert({
+            planned_session_id: sessionRow.id,
+            user_id: userId,
+            part_index: partIdByKey.size,
+            label: part.label ?? null,
+            rounds: partRounds,
+            rest_between_rounds_seconds: partRest,
+          })
+          .select("id")
+          .single();
+        if (partError || !partRow) {
+          return { ok: false, error: "Échec de la création d'une partie de séance." };
+        }
+        partIdByKey.set(part.key, partRow.id);
+      }
+
       for (let j = 0; j < (day.exercises ?? []).length; j++) {
         const planned = day.exercises![j];
         if (!validExerciseIds.has(planned.exerciseId)) continue;
@@ -216,6 +260,8 @@ export async function saveWeeklyPlanDays(
           0,
           Math.floor(Number(planned.restAfterExerciseSeconds) || DEFAULT_REST_AFTER_EXERCISE_SECONDS)
         );
+        const partId = planned.partKey ? partIdByKey.get(planned.partKey) ?? null : null;
+        const roundsForRow = planned.partKey ? partByKey.get(planned.partKey)?.rounds ?? rounds : rounds;
 
         const { data: exerciseRow, error: plannedExError } = await supabase
           .from("planned_exercises")
@@ -227,6 +273,7 @@ export async function saveWeeklyPlanDays(
             target_performance: targetPerformance,
             rest_between_sets_seconds: restBetweenSetsSeconds,
             rest_after_exercise_seconds: restAfterExerciseSeconds,
+            part_id: partId,
             sort_order: j,
           })
           .select("id")
@@ -237,10 +284,10 @@ export async function saveWeeklyPlanDays(
         }
 
         // targetSets is "per round" as entered in the editor — the actual
-        // number of validatable sets is that times the day's round count
-        // (e.g. 3 tours × 3 séries = 9 cases), tracking rounds isn't its
-        // own concept yet, just a multiplier on the flat set list.
-        const setRows = Array.from({ length: targetSets * rounds }, (_, k) => ({
+        // number of validatable sets is that times the round count of the
+        // part this exercise belongs to (day-level base part, or an
+        // explicit part with its own round count).
+        const setRows = Array.from({ length: targetSets * roundsForRow }, (_, k) => ({
           planned_exercise_id: exerciseRow.id,
           user_id: userId,
           set_number: k + 1,

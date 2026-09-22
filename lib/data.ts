@@ -247,7 +247,7 @@ function mapPlannedExerciseRows(
       targetPerformance: e.target_performance,
       restBetweenSetsSeconds: e.rest_between_sets_seconds,
       restAfterExerciseSeconds: e.rest_after_exercise_seconds,
-      partIndex: e.part_id ? partIndexById.get(e.part_id) ?? 0 : 0,
+      partIndex: e.part_id ? partIndexById.get(e.part_id) : undefined,
       sets: (setsByExercise.get(e.id) ?? []).sort((a, b) => a.setNumber - b.setNumber),
     };
   });
@@ -330,14 +330,26 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
         restBetweenRoundsSeconds: p.rest_between_rounds_seconds,
       }));
 
+    // `sort_order` restarts at 1 within each part (see seed/circuits.json),
+    // so a single `.order("sort_order")` on the raw query interleaves rows
+    // from different parts that happen to share a value (part 1's exercise
+    // #1 sorting next to part 2's exercise #1, etc). Sort explicitly here:
+    // by part_index first (so a whole part is consumed before the next
+    // starts), then sort_order within that part.
+    const templateExerciseRows = (exerciseRows ?? [])
+      .filter((e) => e.session_template_id === t.id)
+      .sort((a, b) => {
+        const partDiff = (partIndexById.get(a.part_id) ?? 0) - (partIndexById.get(b.part_id) ?? 0);
+        return partDiff !== 0 ? partDiff : a.sort_order - b.sort_order;
+      });
+
     return {
       id: t.id,
       slug: t.slug,
       name: t.name,
       phaseId: t.phase_id ?? undefined,
       parts,
-      exercises: (exerciseRows ?? [])
-        .filter((e) => e.session_template_id === t.id)
+      exercises: templateExerciseRows
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((e: any) => ({
           id: e.id,

@@ -74,13 +74,13 @@ export interface PlannedExercise {
   /** Repos entre cet exercice et le suivant. Défaut : 1min. */
   restAfterExerciseSeconds: number;
   /**
-   * Index de la partie à laquelle cet exercice appartient (0 par défaut =
-   * partie implicite unique, utilisant PlannedSession.rounds/
-   * restBetweenRoundsSeconds). Une séance construite depuis un circuit à
-   * plusieurs parties (ex. "Push A" p1/p2) a des exercices répartis sur
-   * plusieurs entrées de PlannedSession.parts avec des réglages différents.
+   * Index de la partie explicite à laquelle cet exercice appartient (voir
+   * PlannedSession.parts), ou `undefined` s'il appartient à la partie
+   * implicite unique de la séance (utilisant PlannedSession.rounds/
+   * restBetweenRoundsSeconds) — distinct de 0, qui est un index de partie
+   * explicite valide (première partie d'un circuit à plusieurs parties).
    */
-  partIndex: number;
+  partIndex?: number;
   sets: PlannedSet[];
 }
 

@@ -1,5 +1,5 @@
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { getFamiliesWithExercises, getSessionTemplates, getWeeklyPlan } from "@/lib/data";
+import { getAllExercises, getFamiliesWithExercises, getSessionTemplates, getWeeklyPlan } from "@/lib/data";
 import WeekEditor from "./week-editor";
 import DeleteWeekButton from "./delete-week-button";
 
@@ -29,11 +29,17 @@ export default async function EditWeekPage({
     );
   }
 
-  const [familiesWithExercises, plan, sessionTemplates] = await Promise.all([
+  const [familiesWithExercises, allExercises, plan, sessionTemplates] = await Promise.all([
     getFamiliesWithExercises(),
+    getAllExercises(),
     getWeeklyPlan(userId, weekStart),
     getSessionTemplates(),
   ]);
+  // Mouvements de circuit sans compétence technique (burpee, pompes diamant,
+  // variantes...) — pas dans familiesWithExercises (groupé par famille), mais
+  // nécessaires pour que le sélecteur par ligne affiche correctement un
+  // exercice ajouté depuis un circuit plutôt qu'une compétence.
+  const circuitOnlyExercises = allExercises.filter((ex) => !ex.familyId);
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
@@ -45,6 +51,7 @@ export default async function EditWeekPage({
         weekStart={weekStart}
         plan={plan}
         familiesWithExercises={familiesWithExercises}
+        circuitOnlyExercises={circuitOnlyExercises}
         sessionTemplates={sessionTemplates}
       />
     </main>
