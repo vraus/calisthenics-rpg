@@ -55,6 +55,7 @@ async function awardNewBadges(
 
     const exerciseById = new Map(exercises.map((ex) => [ex.id, ex]));
     for (const ex of exercises) {
+      if (!ex.familyId) continue; // circuit-only movement, not a skill-tree exercise
       const familySlug = familySlugById.get(ex.familyId);
       if (!familySlug) continue;
       totalExercisesByFamily[familySlug] = (totalExercisesByFamily[familySlug] ?? 0) + 1;
@@ -64,6 +65,7 @@ async function awardNewBadges(
       const exercise = exerciseById.get(p.exerciseId);
       if (!exercise) continue;
       masteredExerciseSlugs.add(exercise.slug);
+      if (!exercise.familyId) continue;
       const familySlug = familySlugById.get(exercise.familyId);
       if (!familySlug) continue;
       (masteredSlugsByFamily[familySlug] ??= new Set()).add(exercise.slug);

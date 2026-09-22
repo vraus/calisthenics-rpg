@@ -5,359 +5,222 @@
       "name": "Tractions",
       "statTag": "force-tirage",
       "sortOrder": 1,
+      "phaseSlug": "phase-1-fondations",
       "exercises": [
-        {
-          "slug": "dead-hang",
-          "name": "Dead hang",
-          "tier": 1,
-          "unlockType": "duration",
-          "unlockThreshold": 30,
-          "xpCoefficient": 0.5
-        },
-        {
-          "slug": "scapular-pulls",
-          "name": "Scapular pulls",
-          "tier": 2,
-          "unlockType": "reps",
-          "unlockThreshold": 8,
-          "xpCoefficient": 0.6
-        },
-        {
-          "slug": "rows-inverses",
-          "name": "Rows inversés",
-          "tier": 3,
-          "unlockType": "reps",
-          "unlockThreshold": 10,
-          "xpCoefficient": 0.8
-        },
-        {
-          "slug": "negatives",
-          "name": "Négatives contrôlées",
-          "tier": 4,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 1.2
-        },
-        {
-          "slug": "tractions-assistees",
-          "name": "Tractions assistées (élastique)",
-          "tier": 5,
-          "unlockType": "reps",
-          "unlockThreshold": 8,
-          "xpCoefficient": 1.6
-        },
-        {
-          "slug": "traction-stricte",
-          "name": "Traction stricte",
-          "tier": 6,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 2.5
-        },
-        {
-          "slug": "traction-lestee",
-          "name": "Traction lestée",
-          "tier": 7,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 4
-        },
-        {
-          "slug": "muscle-up",
-          "name": "Muscle-up",
-          "tier": 8,
-          "unlockType": "reps",
-          "unlockThreshold": 3,
-          "xpCoefficient": 6
-        },
-        {
-          "slug": "traction-archer",
-          "name": "Traction archer",
-          "tier": 9,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 9
-        },
-        {
-          "slug": "one-arm-pull-up-assiste",
-          "name": "One-arm pull-up assisté (élastique)",
-          "tier": 10,
-          "unlockType": "reps",
-          "unlockThreshold": 3,
-          "xpCoefficient": 14
-        }
+        { "slug": "tractions-australiennes", "name": "Les tractions australiennes", "tier": 1, "unlockType": "reps", "unlockThreshold": 15, "xpCoefficient": 0.3 },
+        { "slug": "suspension", "name": "La suspension", "tier": 2, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.41 },
+        { "slug": "tractions-elastiques", "name": "Les tractions élastiques", "tier": 3, "unlockType": "reps", "unlockThreshold": 6, "xpCoefficient": 0.55 },
+        { "slug": "tractions-negatives", "name": "Les tractions négatives", "tier": 4, "unlockType": "reps", "unlockThreshold": 6, "xpCoefficient": 0.74 },
+        { "slug": "tractions", "name": "Les tractions", "tier": 5, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 1.0 }
       ]
     },
     {
-      "slug": "pompes-equilibre",
-      "name": "Pompes / équilibre",
+      "slug": "pompes",
+      "name": "Pompes",
       "statTag": "force-poussee",
       "sortOrder": 2,
+      "phaseSlug": "phase-1-fondations",
       "exercises": [
-        {
-          "slug": "pompes-genoux",
-          "name": "Pompes sur genoux",
-          "tier": 1,
-          "unlockType": "reps",
-          "unlockThreshold": 12,
-          "xpCoefficient": 0.4
-        },
-        {
-          "slug": "pompes-strictes",
-          "name": "Pompes strictes",
-          "tier": 2,
-          "unlockType": "reps",
-          "unlockThreshold": 12,
-          "xpCoefficient": 0.6
-        },
-        {
-          "slug": "pompes-lestees",
-          "name": "Pompes lestées",
-          "tier": 3,
-          "unlockType": "reps",
-          "unlockThreshold": 8,
-          "xpCoefficient": 1.0
-        },
-        {
-          "slug": "pike-push-up",
-          "name": "Pike push-up",
-          "tier": 4,
-          "unlockType": "reps",
-          "unlockThreshold": 8,
-          "xpCoefficient": 1.4
-        },
-        {
-          "slug": "handstand-push-up-assiste",
-          "name": "Handstand push-up assisté (mur)",
-          "tier": 5,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 2.2
-        },
-        {
-          "slug": "handstand-push-up-strict",
-          "name": "Handstand push-up strict",
-          "tier": 6,
-          "unlockType": "reps",
-          "unlockThreshold": 3,
-          "xpCoefficient": 3.5
-        },
-        {
-          "slug": "dips-banc",
-          "name": "Dips banc",
-          "tier": 7,
-          "unlockType": "reps",
-          "unlockThreshold": 12,
-          "xpCoefficient": 0.7
-        },
-        {
-          "slug": "dips-paralleles",
-          "name": "Dips parallèles",
-          "tier": 8,
-          "unlockType": "reps",
-          "unlockThreshold": 10,
-          "xpCoefficient": 1.3
-        },
-        {
-          "slug": "tuck-planche",
-          "name": "Tuck planche",
-          "tier": 9,
-          "unlockType": "duration",
-          "unlockThreshold": 10,
-          "xpCoefficient": 3.0
-        },
-        {
-          "slug": "planche-avancee",
-          "name": "Planche avancée (straddle)",
-          "tier": 10,
-          "unlockType": "duration",
-          "unlockThreshold": 8,
-          "xpCoefficient": 5.5
-        }
+        { "slug": "pompes-mains-surelevees", "name": "Les pompes mains surélevées", "tier": 1, "unlockType": "reps", "unlockThreshold": 20, "xpCoefficient": 0.3 },
+        { "slug": "pompes-genoux", "name": "Les pompes à genoux", "tier": 2, "unlockType": "reps", "unlockThreshold": 20, "xpCoefficient": 0.41 },
+        { "slug": "pompes-negatives", "name": "Les pompes négatives", "tier": 3, "unlockType": "reps", "unlockThreshold": 12, "xpCoefficient": 0.55 },
+        { "slug": "pompes-strictes", "name": "Les pompes", "tier": 4, "unlockType": "reps", "unlockThreshold": 20, "xpCoefficient": 0.74 }
+      ]
+    },
+    {
+      "slug": "pistol-squats",
+      "name": "Pistol Squats",
+      "statTag": "force-jambes",
+      "sortOrder": 3,
+      "phaseSlug": "phase-1-fondations",
+      "exercises": [
+        { "slug": "demi-squats", "name": "Les demi-squats", "tier": 1, "unlockType": "reps", "unlockThreshold": 20, "xpCoefficient": 0.3 },
+        { "slug": "squats-profonds", "name": "Les squats profonds", "tier": 2, "unlockType": "reps", "unlockThreshold": 20, "xpCoefficient": 0.41 },
+        { "slug": "pistols-assistes", "name": "Les pistols assistés", "tier": 3, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.55 },
+        { "slug": "pistol-squats-strict", "name": "Les pistol squats", "tier": 4, "unlockType": "reps", "unlockThreshold": 6, "xpCoefficient": 0.74 }
       ]
     },
     {
       "slug": "gainage",
       "name": "Gainage",
       "statTag": "gainage",
-      "sortOrder": 3,
-      "exercises": [
-        {
-          "slug": "planche-ventrale",
-          "name": "Planche ventrale",
-          "tier": 1,
-          "unlockType": "duration",
-          "unlockThreshold": 45,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "planche-laterale",
-          "name": "Planche latérale",
-          "tier": 2,
-          "unlockType": "duration",
-          "unlockThreshold": 30,
-          "xpCoefficient": 0.4
-        },
-        {
-          "slug": "l-sit-assiste",
-          "name": "L-sit assisté (parallettes, genoux pliés)",
-          "tier": 3,
-          "unlockType": "duration",
-          "unlockThreshold": 15,
-          "xpCoefficient": 0.8
-        },
-        {
-          "slug": "l-sit-strict",
-          "name": "L-sit strict",
-          "tier": 4,
-          "unlockType": "duration",
-          "unlockThreshold": 15,
-          "xpCoefficient": 1.5
-        },
-        {
-          "slug": "v-sit",
-          "name": "V-sit",
-          "tier": 5,
-          "unlockType": "duration",
-          "unlockThreshold": 8,
-          "xpCoefficient": 2.5
-        },
-        {
-          "slug": "tuck-front-lever",
-          "name": "Tuck front lever",
-          "tier": 6,
-          "unlockType": "duration",
-          "unlockThreshold": 10,
-          "xpCoefficient": 3.2
-        },
-        {
-          "slug": "front-lever",
-          "name": "Front lever",
-          "tier": 7,
-          "unlockType": "duration",
-          "unlockThreshold": 8,
-          "xpCoefficient": 5.5
-        },
-        {
-          "slug": "dragon-flag",
-          "name": "Dragon flag",
-          "tier": 8,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 4.0
-        }
-      ]
-    },
-    {
-      "slug": "jambes",
-      "name": "Jambes",
-      "statTag": "force-jambes",
       "sortOrder": 4,
+      "phaseSlug": "phase-1-fondations",
       "exercises": [
-        {
-          "slug": "squats-corps-de-poids",
-          "name": "Squats corps de poids",
-          "tier": 1,
-          "unlockType": "reps",
-          "unlockThreshold": 20,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "squats-bulgares",
-          "name": "Squats bulgares",
-          "tier": 2,
-          "unlockType": "reps",
-          "unlockThreshold": 12,
-          "xpCoefficient": 0.5
-        },
-        {
-          "slug": "pistol-squat-assiste",
-          "name": "Pistol squat assisté",
-          "tier": 3,
-          "unlockType": "reps",
-          "unlockThreshold": 6,
-          "xpCoefficient": 1.0
-        },
-        {
-          "slug": "pistol-squat-strict",
-          "name": "Pistol squat strict",
-          "tier": 4,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 2.0
-        },
-        {
-          "slug": "pistol-squat-leste",
-          "name": "Pistol squat lesté",
-          "tier": 5,
-          "unlockType": "reps",
-          "unlockThreshold": 5,
-          "xpCoefficient": 3.5
-        }
+        { "slug": "gainage-genoux-pieds-ecartes", "name": "Le gainage à genoux ou pieds écartés", "tier": 1, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.3 },
+        { "slug": "gainage-strict", "name": "Le gainage", "tier": 2, "unlockType": "duration", "unlockThreshold": 60, "xpCoefficient": 0.41 }
       ]
     },
     {
-      "slug": "hiit",
-      "name": "HIIT",
-      "statTag": "cardio",
+      "slug": "dips",
+      "name": "Dips",
+      "statTag": "force-poussee",
       "sortOrder": 5,
+      "phaseSlug": "phase-1-fondations",
       "exercises": [
-        {
-          "slug": "burpee",
-          "name": "Burpee",
-          "tier": 1,
-          "unlockType": "reps",
-          "unlockThreshold": 10,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "bateau",
-          "name": "Bateau",
-          "tier": 2,
-          "unlockType": "duration",
-          "unlockThreshold": 30,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "jumping-jack",
-          "name": "Jumping jack",
-          "tier": 3,
-          "unlockType": "reps",
-          "unlockThreshold": 30,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "twist-russe",
-          "name": "Twist russe",
-          "tier": 4,
-          "unlockType": "reps",
-          "unlockThreshold": 20,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "gainage-cote",
-          "name": "Gainage côté",
-          "tier": 5,
-          "unlockType": "duration",
-          "unlockThreshold": 30,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "mountain-climber",
-          "name": "Mountain climber",
-          "tier": 6,
-          "unlockType": "reps",
-          "unlockThreshold": 30,
-          "xpCoefficient": 0.3
-        },
-        {
-          "slug": "situp-chaise",
-          "name": "Sit-up en chaise",
-          "tier": 7,
-          "unlockType": "reps",
-          "unlockThreshold": 15,
-          "xpCoefficient": 0.3
-        }
+        { "slug": "dips-support-jambes-pliees", "name": "Les dips sur support jambes pliées", "tier": 1, "unlockType": "reps", "unlockThreshold": 12, "xpCoefficient": 0.3 },
+        { "slug": "dips-support-jambes-tendues", "name": "Les dips sur support jambes tendues", "tier": 2, "unlockType": "reps", "unlockThreshold": 12, "xpCoefficient": 0.41 },
+        { "slug": "dips-negatifs", "name": "Les dips négatifs", "tier": 3, "unlockType": "reps", "unlockThreshold": 8, "xpCoefficient": 0.55 },
+        { "slug": "dips-strict", "name": "Les dips", "tier": 4, "unlockType": "reps", "unlockThreshold": 12, "xpCoefficient": 0.74 }
+      ]
+    },
+    {
+      "slug": "l-sit",
+      "name": "L-Sit",
+      "statTag": "gainage",
+      "sortOrder": 6,
+      "phaseSlug": "phase-1-fondations",
+      "exercises": [
+        { "slug": "l-sit-soulever-support", "name": "Vous soulever sur un support", "tier": 1, "unlockType": "duration", "unlockThreshold": 8, "xpCoefficient": 0.3 },
+        { "slug": "l-sit-soulever-sol", "name": "Vous soulever au sol", "tier": 2, "unlockType": "duration", "unlockThreshold": 8, "xpCoefficient": 0.41 },
+        { "slug": "l-sit-soulever-sol-jambes-levees", "name": "Vous soulever au sol jambes levées", "tier": 3, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.55 },
+        { "slug": "l-sit-deplier-jambes", "name": "Déplier les jambes", "tier": 4, "unlockType": "duration", "unlockThreshold": 5, "xpCoefficient": 0.74 },
+        { "slug": "l-sit-strict", "name": "Le L-sit", "tier": 5, "unlockType": "duration", "unlockThreshold": 10, "xpCoefficient": 1.0 }
+      ]
+    },
+    {
+      "slug": "equilibre",
+      "name": "Équilibre",
+      "statTag": "equilibre",
+      "sortOrder": 7,
+      "phaseSlug": "phase-2-ascension",
+      "exercises": [
+        { "slug": "equilibre-position-piquee", "name": "La position piquée", "tier": 1, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.3 },
+        { "slug": "equilibre-dos-au-mur-niveau", "name": "Équilibre dos au mur", "tier": 2, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.41 },
+        { "slug": "equilibre-ventre-face-au-mur", "name": "Équilibre ventre face au mur", "tier": 3, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.55 },
+        { "slug": "equilibre-dos-au-mur-pieds-decolles", "name": "Équilibre dos au mur pieds décollés", "tier": 4, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.74 },
+        { "slug": "equilibre-strict", "name": "Équilibre", "tier": 5, "unlockType": "duration", "unlockThreshold": 20, "xpCoefficient": 1.0 }
+      ]
+    },
+    {
+      "slug": "position-90",
+      "name": "90°",
+      "statTag": "force-poussee",
+      "sortOrder": 8,
+      "phaseSlug": "phase-2-ascension",
+      "exercises": [
+        { "slug": "pseudo-pompe-basse", "name": "La position pseudo-pompe basse", "tier": 1, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.3 },
+        { "slug": "souleves-pieds-alternes", "name": "Les soulevés de pieds alternés", "tier": 2, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.41 },
+        { "slug": "position-90-plus-pompe", "name": "Le 90° + Pompe", "tier": 3, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.55 },
+        { "slug": "position-90-strict", "name": "Le 90°", "tier": 4, "unlockType": "duration", "unlockThreshold": 5, "xpCoefficient": 0.74 }
+      ]
+    },
+    {
+      "slug": "drapeau",
+      "name": "Drapeau",
+      "statTag": "force-tirage",
+      "sortOrder": 9,
+      "phaseSlug": "phase-2-ascension",
+      "exercises": [
+        { "slug": "drapeau-pieds-au-sol", "name": "Le drapeau pieds au sol", "tier": 1, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.3 },
+        { "slug": "drapeau-une-jambe-levee", "name": "Le drapeau avec une jambe levée", "tier": 2, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.41 },
+        { "slug": "impulsions-drapeau-etoile", "name": "Les impulsions vers le drapeau en étoile", "tier": 3, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.55 },
+        { "slug": "impulsions-drapeau", "name": "Les impulsions vers le drapeau", "tier": 4, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.74 },
+        { "slug": "drapeaux-negatifs", "name": "Les drapeaux négatifs", "tier": 5, "unlockType": "duration", "unlockThreshold": 2, "xpCoefficient": 1.0 },
+        { "slug": "drapeau-strict", "name": "Le drapeau", "tier": 6, "unlockType": "duration", "unlockThreshold": 5, "xpCoefficient": 1.35 }
+      ]
+    },
+    {
+      "slug": "muscle-up",
+      "name": "Muscle Up",
+      "statTag": "force-tirage",
+      "sortOrder": 10,
+      "phaseSlug": "phase-2-ascension",
+      "exercises": [
+        { "slug": "muscle-up-dips-droits", "name": "Les dips droits", "tier": 1, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.3 },
+        { "slug": "muscle-up-negatifs", "name": "Les muscle ups négatifs", "tier": 2, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.41 },
+        { "slug": "muscle-up-tractions-lestees", "name": "Les tractions lestées", "tier": 3, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.55 },
+        { "slug": "muscle-up-strict", "name": "Le muscle up", "tier": 4, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.74 }
+      ]
+    },
+    {
+      "slug": "back-lever",
+      "name": "Back Lever",
+      "statTag": "gainage",
+      "sortOrder": 11,
+      "phaseSlug": "phase-2-ascension",
+      "exercises": [
+        { "slug": "back-lever-montees-genoux", "name": "Les montées de genoux", "tier": 1, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.3 },
+        { "slug": "back-lever-tete-en-bas", "name": "La tête en bas", "tier": 2, "unlockType": "duration", "unlockThreshold": 30, "xpCoefficient": 0.41 },
+        { "slug": "skin-the-cat", "name": "Le skin the cat", "tier": 3, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.55 },
+        { "slug": "back-lever-negatif", "name": "Le back lever négatif", "tier": 4, "unlockType": "duration", "unlockThreshold": 2, "xpCoefficient": 0.74 },
+        { "slug": "straddle-back-lever", "name": "Le straddle back lever", "tier": 5, "unlockType": "duration", "unlockThreshold": 2, "xpCoefficient": 1.0 },
+        { "slug": "back-lever-strict", "name": "Le back lever", "tier": 6, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 1.35 }
+      ]
+    },
+    {
+      "slug": "front-lever",
+      "name": "Front Lever",
+      "statTag": "gainage",
+      "sortOrder": 12,
+      "phaseSlug": "phase-2-ascension",
+      "exercises": [
+        { "slug": "front-lever-tuck", "name": "Le tuck", "tier": 1, "unlockType": "duration", "unlockThreshold": 20, "xpCoefficient": 0.3 },
+        { "slug": "front-lever-tuck-jambes-depliees", "name": "Le tuck jambes dépliées", "tier": 2, "unlockType": "duration", "unlockThreshold": 2, "xpCoefficient": 0.41 },
+        { "slug": "front-lever-negatifs", "name": "Les négatifs", "tier": 3, "unlockType": "duration", "unlockThreshold": 2, "xpCoefficient": 0.55 },
+        { "slug": "straddle-front-lever", "name": "Le straddle front lever", "tier": 4, "unlockType": "duration", "unlockThreshold": 2, "xpCoefficient": 0.74 },
+        { "slug": "front-lever-strict", "name": "Le front lever", "tier": 5, "unlockType": "duration", "unlockThreshold": 5, "xpCoefficient": 1.0 }
+      ]
+    },
+    {
+      "slug": "muscle-up-explosif",
+      "name": "Muscle Up Explosif",
+      "statTag": "force-tirage",
+      "sortOrder": 13,
+      "phaseSlug": "phase-3-maitrise",
+      "exercises": [
+        { "slug": "superman-dips", "name": "Les superman dips", "tier": 1, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.3 },
+        { "slug": "tucks-superman-dips", "name": "Les tucks superman dips", "tier": 2, "unlockType": "reps", "unlockThreshold": 6, "xpCoefficient": 0.41 },
+        { "slug": "le-pop", "name": "Le pop", "tier": 3, "unlockType": "reps", "unlockThreshold": 6, "xpCoefficient": 0.55 },
+        { "slug": "tuck-superman-dips-barre-haute", "name": "Les tuck superman dips sur barre haute", "tier": 4, "unlockType": "reps", "unlockThreshold": 3, "xpCoefficient": 0.74 },
+        { "slug": "pop-barre-haute", "name": "Le pop sur barre haute", "tier": 5, "unlockType": "reps", "unlockThreshold": 2, "xpCoefficient": 1.0 },
+        { "slug": "muscle-up-explosif-strict", "name": "Le muscle up explosif", "tier": 6, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 1.35 }
+      ]
+    },
+    {
+      "slug": "full-planche",
+      "name": "Full Planche",
+      "statTag": "force-poussee",
+      "sortOrder": 14,
+      "phaseSlug": "phase-3-maitrise",
+      "exercises": [
+        { "slug": "la-grenouille", "name": "La grenouille", "tier": 1, "unlockType": "duration", "unlockThreshold": 15, "xpCoefficient": 0.3 },
+        { "slug": "grenouille-bras-tendus", "name": "La grenouille bras tendus", "tier": 2, "unlockType": "duration", "unlockThreshold": 8, "xpCoefficient": 0.41 },
+        { "slug": "tuck-planche", "name": "La tuck planche", "tier": 3, "unlockType": "duration", "unlockThreshold": 8, "xpCoefficient": 0.55 },
+        { "slug": "tuck-planche-avancee", "name": "La tuck planche avancée", "tier": 4, "unlockType": "duration", "unlockThreshold": 8, "xpCoefficient": 0.74 },
+        { "slug": "straddle-planche", "name": "La straddle planche", "tier": 5, "unlockType": "duration", "unlockThreshold": 8, "xpCoefficient": 1.0 },
+        { "slug": "full-planche-strict", "name": "La full planche", "tier": 6, "unlockType": "duration", "unlockThreshold": 5, "xpCoefficient": 1.35 }
+      ]
+    },
+    {
+      "slug": "pompes-en-equilibre",
+      "name": "Pompes en équilibre",
+      "statTag": "force-poussee",
+      "sortOrder": 15,
+      "phaseSlug": "phase-3-maitrise",
+      "exercises": [
+        { "slug": "pompes-pieds-surelevees-tier", "name": "Les pompes pieds surélevées", "tier": 1, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.3 },
+        { "slug": "pompes-piquees-tier", "name": "Les pompes piquées", "tier": 2, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.41 },
+        { "slug": "pompes-piquees-pieds-surelevees", "name": "Les pompes piquées pieds surélevées", "tier": 3, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.55 },
+        { "slug": "negatifs-dos-au-mur", "name": "Les négatifs dos au mur", "tier": 4, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.74 },
+        { "slug": "pompes-equilibre-dos-au-mur", "name": "Les pompes en équilibre dos au mur", "tier": 5, "unlockType": "reps", "unlockThreshold": 8, "xpCoefficient": 1.0 },
+        { "slug": "negatives-pompes-equilibre", "name": "Les négatives", "tier": 6, "unlockType": "reps", "unlockThreshold": 8, "xpCoefficient": 1.35 },
+        { "slug": "pompes-en-equilibre-strict", "name": "Les pompes en équilibres", "tier": 7, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 1.82 }
+      ]
+    },
+    {
+      "slug": "tractions-un-bras",
+      "name": "Tractions à un bras",
+      "statTag": "force-tirage",
+      "sortOrder": 16,
+      "phaseSlug": "phase-3-maitrise",
+      "exercises": [
+        { "slug": "tractions-australiennes-un-bras", "name": "Les tractions australiennes à un bras", "tier": 1, "unlockType": "reps", "unlockThreshold": 10, "xpCoefficient": 0.3 },
+        { "slug": "suspension-un-bras", "name": "La suspension à un bras", "tier": 2, "unlockType": "duration", "unlockThreshold": 20, "xpCoefficient": 0.41 },
+        { "slug": "tractions-scapula-un-bras", "name": "Les tractions scapula à un bras", "tier": 3, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 0.55 },
+        { "slug": "tractions-assistees-un-bras", "name": "Les tractions assistées à un bras", "tier": 4, "unlockType": "reps", "unlockThreshold": 8, "xpCoefficient": 0.74 },
+        { "slug": "tractions-negatives-un-bras", "name": "Les tractions négatives à un bras", "tier": 5, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 1.0 },
+        { "slug": "tractions-un-bras-strict", "name": "Les tractions à un bras", "tier": 6, "unlockType": "reps", "unlockThreshold": 5, "xpCoefficient": 1.35 }
       ]
     }
   ]

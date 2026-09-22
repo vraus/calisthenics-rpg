@@ -1,0 +1,415 @@
+{
+  "circuits": [
+    {
+      "slug": "seance-hiit",
+      "name": "Séance HIIT",
+      "sortOrder": 1,
+      "phaseSlug": "phase-1-fondations",
+      "parts": [
+        {
+          "partIndex": 0,
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 60,
+          "exercises": [
+            { "exerciseSlug": "burpee", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 1 },
+            { "exerciseSlug": "bateau", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 2 },
+            { "exerciseSlug": "jumping-jack", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 3 },
+            { "exerciseSlug": "twist-russe", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 4 },
+            { "exerciseSlug": "gainage-cote", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 5 },
+            { "exerciseSlug": "mountain-climber", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 6 },
+            { "exerciseSlug": "situp-chaise", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 7 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-pull-a",
+      "name": "Push & Pull A",
+      "sortOrder": 2,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "position-90-pompes", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 },
+            { "exerciseSlug": "tractions-explosives", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 2 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pompes-diamant", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 },
+            { "exerciseSlug": "traction-pronation", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 2 },
+            { "exerciseSlug": "dips-droits", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 3 },
+            { "exerciseSlug": "traction-supination", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 4 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 5 },
+            { "exerciseSlug": "l-sit-suspendu", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-pull-b",
+      "name": "Push & Pull B",
+      "sortOrder": 3,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "position-90-pompes", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 },
+            { "exerciseSlug": "montees-front-lever", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 2 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pompes-diamant", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 },
+            { "exerciseSlug": "traction-pronation", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 2 },
+            { "exerciseSlug": "pompes-archer-alternees", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 3 },
+            { "exerciseSlug": "traction-supination", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 4 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 5 },
+            { "exerciseSlug": "l-sit-suspendu", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "jambes-et-abdos-phase2",
+      "name": "Jambes et Abdos",
+      "sortOrder": 4,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "fentes-cosaques", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 1 },
+            { "exerciseSlug": "fentes-sautees-alternees", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 2 },
+            { "exerciseSlug": "chaise", "targetSets": 1, "targetPerformance": 45, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 3 },
+            { "exerciseSlug": "montee-mollet", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 4 },
+            { "exerciseSlug": "pistol-squats-circuit", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 5 },
+            { "exerciseSlug": "montees-hanches-jambe-tendue", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 6 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "gainage-cote", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 1 },
+            { "exerciseSlug": "montees-hanches", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 2 },
+            { "exerciseSlug": "superman", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "epaules",
+      "name": "Épaules",
+      "sortOrder": 5,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "equilibre-dos-au-mur-circuit", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 60, "sortOrder": 1 },
+            { "exerciseSlug": "equilibre-face-au-mur-circuit", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 60, "sortOrder": 2 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pompes-piquees-circuit", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 1 },
+            { "exerciseSlug": "pseudo-pompes-circuit", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 2 },
+            { "exerciseSlug": "gainage-reachup", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 3 },
+            { "exerciseSlug": "epaule-a-epaule", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 4 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pull-a-phase2",
+      "name": "Pull A",
+      "sortOrder": 6,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 150,
+          "exercises": [
+            { "exerciseSlug": "tractions-explosives", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "muscle-ups-negatifs-circuit", "targetSets": 1, "targetPerformance": 6, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 1 },
+            { "exerciseSlug": "dips-droits", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 2 },
+            { "exerciseSlug": "traction-supination", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 3 },
+            { "exerciseSlug": "traction-pronation", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 4 },
+            { "exerciseSlug": "tractions-australiennes-circuit", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 5 },
+            { "exerciseSlug": "montees-jambes-explosives", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pull-b-phase2",
+      "name": "Pull B",
+      "sortOrder": 7,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "montees-front-lever", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 1 },
+            { "exerciseSlug": "traction-pronation", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 2 },
+            { "exerciseSlug": "l-sit-suspendu", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 3 },
+            { "exerciseSlug": "deadlifts-inverses", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 4 },
+            { "exerciseSlug": "traction-supination", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 5 },
+            { "exerciseSlug": "traction-scapula", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 55, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-phase2",
+      "name": "Push",
+      "sortOrder": 8,
+      "phaseSlug": "phase-2-ascension",
+      "parts": [
+        {
+          "partIndex": 0,
+          "rounds": 3,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pompes-diamant", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 1 },
+            { "exerciseSlug": "pompes-archer-alternees", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 2 },
+            { "exerciseSlug": "extensions-triceps", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 3 },
+            { "exerciseSlug": "gainage-pieds-alternes", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 4 },
+            { "exerciseSlug": "bateau", "targetSets": 1, "targetPerformance": 40, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 5 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 30, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 45, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "jambes-et-abdos-phase3",
+      "name": "Jambes et abdos",
+      "sortOrder": 9,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pistol-squats-circuit", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 1 },
+            { "exerciseSlug": "fentes-bulgares-explosives", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 2 },
+            { "exerciseSlug": "montees-hanches", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 3 },
+            { "exerciseSlug": "chaise", "targetSets": 1, "targetPerformance": 45, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 4 },
+            { "exerciseSlug": "situp-chaise", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 5 },
+            { "exerciseSlug": "montees-mollet-une-jambe", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 6 },
+            { "exerciseSlug": "gainage-cote-montees-descentes", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 7 },
+            { "exerciseSlug": "gainage-circuit", "targetSets": 1, "targetPerformance": 60, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 8 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-pull-a-phase3",
+      "name": "Push & Pull A",
+      "sortOrder": 10,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "tractions-explosives", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 },
+            { "exerciseSlug": "equilibre-dos-au-mur-circuit", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 2 },
+            { "exerciseSlug": "montees-front-lever", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 3 },
+            { "exerciseSlug": "position-90-pompes", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 4 },
+            { "exerciseSlug": "traction-scapula", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 5 },
+            { "exerciseSlug": "pompes-larges-diamant-alternees", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-a-phase3",
+      "name": "Push A",
+      "sortOrder": 11,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pompes-en-equilibre-circuit", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "equilibre-dos-au-mur-circuit", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 1 },
+            { "exerciseSlug": "position-90-pompes", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 2 },
+            { "exerciseSlug": "pompes-archer-alternees", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 3 },
+            { "exerciseSlug": "pompes-diamant", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 4 },
+            { "exerciseSlug": "gainage-cote-montees-descentes", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 5 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 40, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pull-a-phase3",
+      "name": "Pull A",
+      "sortOrder": 12,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "traction-a-un-bras-circuit", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "traction-pronation", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 1 },
+            { "exerciseSlug": "traction-supination-archer", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 2 },
+            { "exerciseSlug": "traction-commando-alternee", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 3 },
+            { "exerciseSlug": "traction-australienne-un-bras-circuit", "targetSets": 1, "targetPerformance": 6, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 4 },
+            { "exerciseSlug": "traction-australienne-archer-alternee", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-pull-b-phase3",
+      "name": "Push & pull B",
+      "sortOrder": 13,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 60,
+          "exercises": [
+            { "exerciseSlug": "tractions-explosives", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 1 },
+            { "exerciseSlug": "extensions-triceps", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 2 },
+            { "exerciseSlug": "montees-front-lever", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 3 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 40, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 4 },
+            { "exerciseSlug": "traction-scapula", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 5 },
+            { "exerciseSlug": "pseudo-pompes-circuit", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 6 },
+            { "exerciseSlug": "superman", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 20, "sortOrder": 7 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "push-b-phase3",
+      "name": "Push B",
+      "sortOrder": 14,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "full-planche-circuit", "targetSets": 1, "targetPerformance": 0, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "extensions-triceps", "targetSets": 1, "targetPerformance": 12, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 1 },
+            { "exerciseSlug": "pseudo-pompes-circuit", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 2 },
+            { "exerciseSlug": "planche-inversee", "targetSets": 1, "targetPerformance": 40, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 3 },
+            { "exerciseSlug": "pompes-diamant", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 4 },
+            { "exerciseSlug": "gainage-cote-montees-descentes", "targetSets": 1, "targetPerformance": 20, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 5 },
+            { "exerciseSlug": "superman", "targetSets": 1, "targetPerformance": 15, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pull-b-phase3",
+      "name": "Pull B",
+      "sortOrder": 15,
+      "phaseSlug": "phase-3-maitrise",
+      "parts": [
+        {
+          "partIndex": 0,
+          "label": "p1",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "muscle-up-explosif-circuit", "targetSets": 1, "targetPerformance": 7, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 0, "sortOrder": 1 }
+          ]
+        },
+        {
+          "partIndex": 1,
+          "label": "p2",
+          "rounds": 4,
+          "restBetweenRoundsSeconds": 120,
+          "exercises": [
+            { "exerciseSlug": "pull-over-dips-droit-explosif", "targetSets": 1, "targetPerformance": 6, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 1 },
+            { "exerciseSlug": "tractions-explosives", "targetSets": 1, "targetPerformance": 7, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 2 },
+            { "exerciseSlug": "montees-front-lever", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 3 },
+            { "exerciseSlug": "montees-jambes-explosives", "targetSets": 1, "targetPerformance": 8, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 4 },
+            { "exerciseSlug": "traction-scapula", "targetSets": 1, "targetPerformance": 10, "restBetweenSetsSeconds": 0, "restAfterExerciseSeconds": 50, "sortOrder": 5 }
+          ]
+        }
+      ]
+    }
+  ]
+}

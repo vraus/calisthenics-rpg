@@ -5,12 +5,15 @@ import type {
   DayOfWeek,
   Exercise,
   ExerciseFamily,
+  Phase,
   PlannedExercise,
   PlannedSession,
+  PlannedSessionPart,
   PlannedSet,
   Profile,
   ProfileSummary,
   SessionTemplate,
+  SessionTemplatePart,
   UnlockType,
   UserProgress,
   WeeklyPlan,
@@ -24,11 +27,29 @@ import { levelFromXp } from "@/lib/xp";
  * place.
  */
 
+export async function getPhases(): Promise<Phase[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("phases")
+    .select("id, slug, name, sort_order, prerequisites_text")
+    .order("sort_order");
+
+  if (error) throw new Error(`getPhases: ${error.message}`);
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    sortOrder: p.sort_order,
+    prerequisitesText: p.prerequisites_text ?? undefined,
+  }));
+}
+
 export async function getFamilies(): Promise<ExerciseFamily[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("exercise_families")
-    .select("id, slug, name, stat_tag, sort_order")
+    .select("id, slug, name, stat_tag, sort_order, phase_id")
     .order("sort_order");
 
   if (error) throw new Error(`getFamilies: ${error.message}`);
@@ -39,6 +60,7 @@ export async function getFamilies(): Promise<ExerciseFamily[]> {
     name: f.name,
     statTag: f.stat_tag,
     sortOrder: f.sort_order,
+    phaseId: f.phase_id ?? undefined,
   }));
 }
 
@@ -49,7 +71,7 @@ export async function getExercisesByFamilySlug(
 
   const { data: family, error: familyError } = await supabase
     .from("exercise_families")
-    .select("id, slug, name, stat_tag, sort_order")
+    .select("id, slug, name, stat_tag, sort_order, phase_id")
     .eq("slug", familySlug)
     .maybeSingle();
 
@@ -58,7 +80,7 @@ export async function getExercisesByFamilySlug(
 
   const { data: exercises, error: exercisesError } = await supabase
     .from("exercises")
-    .select("id, family_id, slug, name, tier, unlock_type, unlock_threshold, xp_coefficient")
+    .select(EXERCISE_SELECT)
     .eq("family_id", family.id)
     .order("tier");
 
@@ -71,6 +93,7 @@ export async function getExercisesByFamilySlug(
       name: family.name,
       statTag: family.stat_tag,
       sortOrder: family.sort_order,
+      phaseId: family.phase_id ?? undefined,
     },
     exercises: (exercises ?? []).map(mapExerciseRow),
   };
@@ -88,15 +111,16 @@ export async function getFamiliesWithExercises(): Promise<
     family,
     exercises: exercises
       .filter((ex) => ex.familyId === family.id)
-      .sort((a, b) => a.tier - b.tier),
+      .sort((a, b) => a.tier! - b.tier!),
   }));
 }
 
+/** Every exercise, including family-less circuit movements and variants — filter as needed. */
 export async function getAllExercises(): Promise<Exercise[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("exercises")
-    .select("id, family_id, slug, name, tier, unlock_type, unlock_threshold, xp_coefficient")
+    .select(EXERCISE_SELECT)
     .order("tier");
 
   if (error) throw new Error(`getAllExercises: ${error.message}`);
@@ -197,8 +221,13 @@ export async function getRestDayCompletionDates(userId: string): Promise<string[
   return (data ?? []).map((row) => row.completed_at as string);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapPlannedExerciseRows(exerciseRows: any[], setRows: any[]): PlannedExercise[] {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function mapPlannedExerciseRows(
+  exerciseRows: any[],
+  setRows: any[],
+  partIndexById: Map<string, number> = new Map()
+): PlannedExercise[] {
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   const setsByExercise = new Map<string, PlannedSet[]>();
   for (const s of setRows) {
     const list = setsByExercise.get(s.planned_exercise_id) ?? [];
@@ -218,9 +247,21 @@ function mapPlannedExerciseRows(exerciseRows: any[], setRows: any[]): PlannedExe
       targetPerformance: e.target_performance,
       restBetweenSetsSeconds: e.rest_between_sets_seconds,
       restAfterExerciseSeconds: e.rest_after_exercise_seconds,
+      partIndex: e.part_id ? partIndexById.get(e.part_id) ?? 0 : 0,
       sets: (setsByExercise.get(e.id) ?? []).sort((a, b) => a.setNumber - b.setNumber),
     };
   });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPlannedSessionParts(partRows: any[]): PlannedSessionPart[] {
+  return partRows.map((p) => ({
+    id: p.id,
+    partIndex: p.part_index,
+    label: p.label ?? undefined,
+    rounds: p.rounds,
+    restBetweenRoundsSeconds: p.rest_between_rounds_seconds,
+  }));
 }
 
 /** Which of these week_start keys already have a plan, for this user. */
@@ -246,16 +287,27 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
   const supabase = await createClient();
   const { data: templateRows, error: templatesError } = await supabase
     .from("session_templates")
-    .select("id, name, rounds, rest_between_rounds_seconds")
+    .select("id, slug, name, phase_id")
     .order("sort_order");
 
   if (templatesError) throw new Error(`getSessionTemplates: ${templatesError.message}`);
   if (!templateRows || templateRows.length === 0) return [];
 
+  const { data: partRows, error: partsError } = await supabase
+    .from("session_template_parts")
+    .select("id, session_template_id, part_index, label, rounds, rest_between_rounds_seconds")
+    .in(
+      "session_template_id",
+      templateRows.map((t) => t.id)
+    )
+    .order("part_index");
+
+  if (partsError) throw new Error(`getSessionTemplates: ${partsError.message}`);
+
   const { data: exerciseRows, error: exercisesError } = await supabase
     .from("session_template_exercises")
     .select(
-      "id, session_template_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type)"
+      "id, session_template_id, part_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type)"
     )
     .in(
       "session_template_id",
@@ -265,30 +317,46 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
 
   if (exercisesError) throw new Error(`getSessionTemplates: ${exercisesError.message}`);
 
-  return templateRows.map((t) => ({
-    id: t.id,
-    name: t.name,
-    rounds: t.rounds,
-    restBetweenRoundsSeconds: t.rest_between_rounds_seconds,
-    exercises: (exerciseRows ?? [])
-      .filter((e) => e.session_template_id === t.id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((e: any) => ({
-        id: e.id,
-        exerciseId: e.exercise_id,
-        exerciseName: e.exercises?.name ?? "Exercice",
-        exerciseSlug: e.exercises?.slug ?? "",
-        unlockType: (e.exercises?.unlock_type as UnlockType) ?? "reps",
-        targetSets: e.target_sets,
-        targetPerformance: e.target_performance,
-        restBetweenSetsSeconds: e.rest_between_sets_seconds,
-        restAfterExerciseSeconds: e.rest_after_exercise_seconds,
-      })),
-  }));
+  const partIndexById = new Map((partRows ?? []).map((p) => [p.id, p.part_index]));
+
+  return templateRows.map((t) => {
+    const parts: SessionTemplatePart[] = (partRows ?? [])
+      .filter((p) => p.session_template_id === t.id)
+      .map((p) => ({
+        id: p.id,
+        partIndex: p.part_index,
+        label: p.label ?? undefined,
+        rounds: p.rounds,
+        restBetweenRoundsSeconds: p.rest_between_rounds_seconds,
+      }));
+
+    return {
+      id: t.id,
+      slug: t.slug,
+      name: t.name,
+      phaseId: t.phase_id ?? undefined,
+      parts,
+      exercises: (exerciseRows ?? [])
+        .filter((e) => e.session_template_id === t.id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((e: any) => ({
+          id: e.id,
+          exerciseId: e.exercise_id,
+          exerciseName: e.exercises?.name ?? "Exercice",
+          exerciseSlug: e.exercises?.slug ?? "",
+          unlockType: (e.exercises?.unlock_type as UnlockType) ?? "reps",
+          targetSets: e.target_sets,
+          targetPerformance: e.target_performance,
+          restBetweenSetsSeconds: e.rest_between_sets_seconds,
+          restAfterExerciseSeconds: e.rest_after_exercise_seconds,
+          partIndex: partIndexById.get(e.part_id) ?? 0,
+        })),
+    };
+  });
 }
 
 const PLANNED_EXERCISE_SELECT =
-  "id, planned_session_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type)";
+  "id, planned_session_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, part_id, exercises(name, slug, unlock_type)";
 
 /** The current week's plan (if any) for this user, fully nested. */
 export async function getWeeklyPlan(userId: string, weekStart: string): Promise<WeeklyPlan | null> {
@@ -333,13 +401,25 @@ export async function getWeeklyPlan(userId: string, weekStart: string): Promise<
 
   if (setsError) throw new Error(`getWeeklyPlan: ${setsError.message}`);
 
+  const { data: partRows, error: partsError } = sessionIds.length
+    ? await supabase
+        .from("planned_session_parts")
+        .select("id, planned_session_id, part_index, label, rounds, rest_between_rounds_seconds")
+        .in("planned_session_id", sessionIds)
+        .order("part_index")
+    : { data: [], error: null };
+
+  if (partsError) throw new Error(`getWeeklyPlan: ${partsError.message}`);
+
+  const partIndexById = new Map((partRows ?? []).map((p) => [p.id, p.part_index]));
   const exercisesBySession = new Map<string, PlannedExercise[]>();
   for (const sessionId of sessionIds) {
     exercisesBySession.set(
       sessionId,
       mapPlannedExerciseRows(
         (exerciseRows ?? []).filter((e) => e.planned_session_id === sessionId),
-        setRows ?? []
+        setRows ?? [],
+        partIndexById
       )
     );
   }
@@ -357,6 +437,7 @@ export async function getWeeklyPlan(userId: string, weekStart: string): Promise<
       dayKind: s.day_kind as DayKind,
       rounds: s.rounds,
       restBetweenRoundsSeconds: s.rest_between_rounds_seconds,
+      parts: mapPlannedSessionParts((partRows ?? []).filter((p) => p.planned_session_id === s.id)),
       completedAt: s.completed_at ?? undefined,
       fullCompletion: s.full_completion,
       exercises: exercisesBySession.get(s.id) ?? [],
@@ -399,6 +480,16 @@ export async function getPlannedSessionDetail(
 
   if (setsError) throw new Error(`getPlannedSessionDetail: ${setsError.message}`);
 
+  const { data: partRows, error: partsError } = await supabase
+    .from("planned_session_parts")
+    .select("id, planned_session_id, part_index, label, rounds, rest_between_rounds_seconds")
+    .eq("planned_session_id", sessionRow.id)
+    .order("part_index");
+
+  if (partsError) throw new Error(`getPlannedSessionDetail: ${partsError.message}`);
+
+  const partIndexById = new Map((partRows ?? []).map((p) => [p.id, p.part_index]));
+
   return {
     id: sessionRow.id,
     weeklyPlanId: sessionRow.weekly_plan_id,
@@ -408,9 +499,10 @@ export async function getPlannedSessionDetail(
     dayKind: sessionRow.day_kind as DayKind,
     rounds: sessionRow.rounds,
     restBetweenRoundsSeconds: sessionRow.rest_between_rounds_seconds,
+    parts: mapPlannedSessionParts(partRows ?? []),
     completedAt: sessionRow.completed_at ?? undefined,
     fullCompletion: sessionRow.full_completion,
-    exercises: mapPlannedExerciseRows(exerciseRows ?? [], setRows ?? []),
+    exercises: mapPlannedExerciseRows(exerciseRows ?? [], setRows ?? [], partIndexById),
   };
 }
 
@@ -488,28 +580,40 @@ export async function ensureProfile(
   }
 }
 
+const PROFILE_SELECT = "user_id, username, current_phase_id, onboarding_completed_at";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapProfileRow(row: any): Profile {
+  return {
+    userId: row.user_id,
+    username: row.username,
+    currentPhaseId: row.current_phase_id ?? undefined,
+    onboardingCompletedAt: row.onboarding_completed_at ?? undefined,
+  };
+}
+
 export async function getProfile(userId: string): Promise<Profile | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("user_id, username")
+    .select(PROFILE_SELECT)
     .eq("user_id", userId)
     .maybeSingle();
 
   if (error) throw new Error(`getProfile: ${error.message}`);
-  return data ? { userId: data.user_id, username: data.username } : null;
+  return data ? mapProfileRow(data) : null;
 }
 
 export async function getProfileByUsername(username: string): Promise<Profile | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("user_id, username")
+    .select(PROFILE_SELECT)
     .eq("username", username)
     .maybeSingle();
 
   if (error) throw new Error(`getProfileByUsername: ${error.message}`);
-  return data ? { userId: data.user_id, username: data.username } : null;
+  return data ? mapProfileRow(data) : null;
 }
 
 /** Every profile with its global level (own progress XP + bonus XP), for the directory. */
@@ -538,16 +642,21 @@ export async function getAllProfilesWithLevel(): Promise<ProfileSummary[]> {
     .sort((a, b) => b.level - a.level);
 }
 
+const EXERCISE_SELECT =
+  "id, family_id, slug, name, tier, unlock_type, unlock_threshold, xp_coefficient, description, variant_of_id";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapExerciseRow(row: any): Exercise {
   return {
     id: row.id,
-    familyId: row.family_id,
+    familyId: row.family_id ?? undefined,
     slug: row.slug,
     name: row.name,
-    tier: row.tier,
-    unlockType: row.unlock_type,
-    unlockThreshold: row.unlock_threshold,
-    xpCoefficient: Number(row.xp_coefficient),
+    tier: row.tier ?? undefined,
+    unlockType: row.unlock_type ?? undefined,
+    unlockThreshold: row.unlock_threshold ?? undefined,
+    xpCoefficient: row.xp_coefficient != null ? Number(row.xp_coefficient) : undefined,
+    description: row.description ?? undefined,
+    variantOfId: row.variant_of_id ?? undefined,
   };
 }

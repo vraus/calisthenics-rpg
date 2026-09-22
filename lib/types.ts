@@ -1,22 +1,42 @@
 export type UnlockType = "reps" | "duration";
 
+/** Zone de progression (3 aujourd'hui) regroupant plusieurs compétences techniques. */
+export interface Phase {
+  id: string;
+  slug: string;
+  name: string;
+  sortOrder: number;
+  /** Texte des prérequis affiché pendant l'onboarding de placement. */
+  prerequisitesText?: string;
+}
+
 export interface ExerciseFamily {
   id: string;
   slug: string;
   name: string;
   statTag: string;
   sortOrder: number;
+  phaseId?: string;
 }
 
+/**
+ * Un noeud de l'arbre de compétences (familyId + tier renseignés), OU un
+ * mouvement de circuit sans progression technique (familyId/tier absents —
+ * ex. burpee, jumping jack), OU la variante d'un autre exercice de circuit
+ * (variantOfId renseigné, ex. "Burpee sans pompes").
+ */
 export interface Exercise {
   id: string;
-  familyId: string;
+  familyId?: string;
   slug: string;
   name: string;
-  tier: number;
-  unlockType: UnlockType;
-  unlockThreshold: number;
-  xpCoefficient: number;
+  tier?: number;
+  unlockType?: UnlockType;
+  unlockThreshold?: number;
+  xpCoefficient?: number;
+  /** Paragraphe affiché dans la dialogue de niveau de l'arbre de compétences. */
+  description?: string;
+  variantOfId?: string;
 }
 
 /** A single logged set of work for one exercise, as entered on the log page. */
@@ -53,7 +73,24 @@ export interface PlannedExercise {
   restBetweenSetsSeconds: number;
   /** Repos entre cet exercice et le suivant. Défaut : 1min. */
   restAfterExerciseSeconds: number;
+  /**
+   * Index de la partie à laquelle cet exercice appartient (0 par défaut =
+   * partie implicite unique, utilisant PlannedSession.rounds/
+   * restBetweenRoundsSeconds). Une séance construite depuis un circuit à
+   * plusieurs parties (ex. "Push A" p1/p2) a des exercices répartis sur
+   * plusieurs entrées de PlannedSession.parts avec des réglages différents.
+   */
+  partIndex: number;
   sets: PlannedSet[];
+}
+
+/** Un groupe d'exercices d'une séance planifiée avec son propre nombre de tours/pause (ex. p1/p2 d'un circuit). */
+export interface PlannedSessionPart {
+  id: string;
+  partIndex: number;
+  label?: string;
+  rounds: number;
+  restBetweenRoundsSeconds: number;
 }
 
 export type DayKind = "rest" | "session";
@@ -73,15 +110,27 @@ export interface SessionTemplateExercise {
   targetPerformance: number;
   restBetweenSetsSeconds: number;
   restAfterExerciseSeconds: number;
+  /** Index de la partie à laquelle appartient cet exercice — voir SessionTemplatePart. */
+  partIndex: number;
+}
+
+/** Une partie d'un circuit (ex. "p1"/"p2" de "Push A"), avec son propre nombre de tours/pause. */
+export interface SessionTemplatePart {
+  id: string;
+  partIndex: number;
+  label?: string;
+  rounds: number;
+  restBetweenRoundsSeconds: number;
 }
 
 export interface SessionTemplate {
   id: string;
+  slug: string;
   name: string;
-  /** Nombre de fois où le circuit complet est répété. Défaut : 1. */
-  rounds: number;
-  /** Pause entre deux tours. Défaut : 90s (1min30). */
-  restBetweenRoundsSeconds: number;
+  phaseId?: string;
+  /** Parties du circuit (p1/p2...), chacune avec son nombre de tours/pause. La plupart des circuits n'en ont qu'une. */
+  parts: SessionTemplatePart[];
+  /** Vue à plat de tous les exercices, triés par (partIndex, sortOrder) — pratique pour l'affichage simple actuel. */
   exercises: SessionTemplateExercise[];
 }
 
@@ -111,6 +160,13 @@ export interface PlannedSession {
   restBetweenRoundsSeconds: number;
   completedAt?: string;
   fullCompletion: boolean;
+  /**
+   * Parties explicites de cette séance (posées quand elle a été construite
+   * depuis un circuit à plusieurs parties). Vide pour l'immense majorité des
+   * séances aujourd'hui, qui utilisent la partie implicite unique
+   * (rounds/restBetweenRoundsSeconds ci-dessus, PlannedExercise.partIndex = 0).
+   */
+  parts: PlannedSessionPart[];
   exercises: PlannedExercise[];
 }
 
@@ -130,6 +186,8 @@ export function isDayLocked(session: PlannedSession): boolean {
 export interface Profile {
   userId: string;
   username: string;
+  currentPhaseId?: string;
+  onboardingCompletedAt?: string;
 }
 
 export interface ProfileSummary extends Profile {

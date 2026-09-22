@@ -4,6 +4,12 @@ import type { Exercise, ExerciseFamily, SessionInput, UserProgress } from "./typ
  * Core XP engine. No UI or Supabase dependency on purpose: this module is
  * meant to be imported as-is by a future MCP server exposing the same
  * `log_session` / `get_progress` logic, without duplicating the rules here.
+ *
+ * Every function here operates on skill-tree exercises (familyId/tier set,
+ * unlockType/unlockThreshold/xpCoefficient set) — never on the family-less
+ * circuit-only movements introduced alongside `Exercise.variantOfId`, which
+ * have no mastery/XP concept. Callers are expected to only pass exercises
+ * read from a family (getExercisesByFamilySlug/getFamiliesWithExercises).
  */
 
 export class InvalidSessionError extends Error {}
@@ -27,7 +33,7 @@ export function computeSessionXp(
         "repsPerSet is required for a reps-based exercise"
       );
     }
-    return round2(session.sets * session.repsPerSet * exercise.xpCoefficient);
+    return round2(session.sets * session.repsPerSet * exercise.xpCoefficient!);
   }
 
   if (!session.durationSeconds || session.durationSeconds <= 0) {
@@ -35,7 +41,7 @@ export function computeSessionXp(
       "durationSeconds is required for a duration-based exercise"
     );
   }
-  return round2(session.sets * session.durationSeconds * exercise.xpCoefficient);
+  return round2(session.sets * session.durationSeconds * exercise.xpCoefficient!);
 }
 
 /**
@@ -49,9 +55,9 @@ export function meetsUnlockThreshold(
   exercise: Exercise
 ): boolean {
   if (exercise.unlockType === "reps") {
-    return (session.repsPerSet ?? 0) >= exercise.unlockThreshold;
+    return (session.repsPerSet ?? 0) >= exercise.unlockThreshold!;
   }
-  return (session.durationSeconds ?? 0) >= exercise.unlockThreshold;
+  return (session.durationSeconds ?? 0) >= exercise.unlockThreshold!;
 }
 
 /** Cumulative XP required to *reach* a given level (level 1 = 0 XP). */
@@ -105,7 +111,7 @@ export function buildFamilyTree(
   progress: Pick<UserProgress, "exerciseId" | "xpInExercise" | "mastered">[]
 ): TreeNodeState[] {
   const progressByExercise = new Map(progress.map((p) => [p.exerciseId, p]));
-  const sorted = [...exercises].sort((a, b) => a.tier - b.tier);
+  const sorted = [...exercises].sort((a, b) => a.tier! - b.tier!);
 
   let previousMastered = true; // tier 1 is always unlocked
   return sorted.map((exercise) => {

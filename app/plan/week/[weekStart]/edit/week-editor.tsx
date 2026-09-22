@@ -152,6 +152,10 @@ export default function WeekEditor({
   function applyTemplate(dayOfWeek: DayOfWeek, templateId: string) {
     const template = sessionTemplates.find((t) => t.id === templateId);
     if (!template) return;
+    // Les circuits à plusieurs parties (p1/p2...) sont aplatis en une seule
+    // liste ici : l'éditeur de semaine ne gère qu'une partie implicite pour
+    // l'instant (voir plan Jalon 5). On reprend les réglages de la 1ʳᵉ partie.
+    const firstPart = template.parts[0];
     updateDay(dayOfWeek, {
       label: `${DAY_LABELS[dayOfWeek]} ${template.name}`,
       exercises: template.exercises.map((e) => ({
@@ -161,8 +165,8 @@ export default function WeekEditor({
         restBetweenSetsSeconds: e.restBetweenSetsSeconds,
         restAfterExerciseSeconds: e.restAfterExerciseSeconds,
       })),
-      rounds: template.rounds,
-      restBetweenRoundsSeconds: template.restBetweenRoundsSeconds,
+      rounds: firstPart?.rounds ?? DEFAULT_ROUNDS,
+      restBetweenRoundsSeconds: firstPart?.restBetweenRoundsSeconds ?? DEFAULT_REST_BETWEEN_ROUNDS,
     });
   }
 

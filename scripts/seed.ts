@@ -1,8 +1,9 @@
 /**
- * Charge seed/trees.json (exercise_families + exercises), seed/badges.json
- * (badges) et seed/session_templates.json (templates de séance) dans
- * Supabase. Idempotent : upsert sur le slug, exécutable plusieurs fois sans
- * dupliquer.
+ * Charge seed/phases.json (phases), seed/trees.json (exercise_families +
+ * exercises), seed/badges.json (badges), seed/circuit-exercises.json
+ * (mouvements de circuit sans progression technique + leurs variantes) et
+ * seed/circuits.json (circuits préfaits, avec leurs parties) dans Supabase.
+ * Idempotent : upsert sur le slug, exécutable plusieurs fois sans dupliquer.
  *
  * Usage : npm run seed
  * Requiert dans l'environnement : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -21,6 +22,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // .env.local automatiquement contrairement à `next dev`/`next build`.
 config({ path: path.join(__dirname, "..", ".env.local") });
 
+interface SeedPhase {
+  slug: string;
+  name: string;
+  sortOrder: number;
+  prerequisitesText: string | null;
+}
+
 interface SeedExercise {
   slug: string;
   name: string;
@@ -35,6 +43,7 @@ interface SeedFamily {
   name: string;
   statTag: string;
   sortOrder: number;
+  phaseSlug: string;
   exercises: SeedExercise[];
 }
 
@@ -45,7 +54,13 @@ interface SeedBadge {
   sortOrder: number;
 }
 
-interface SeedSessionTemplateExercise {
+interface SeedCircuitExercise {
+  slug: string;
+  name: string;
+  variantOfSlug?: string;
+}
+
+interface SeedCircuitPartExercise {
   exerciseSlug: string;
   targetSets: number;
   targetPerformance: number;
@@ -54,13 +69,20 @@ interface SeedSessionTemplateExercise {
   sortOrder: number;
 }
 
-interface SeedSessionTemplate {
+interface SeedCircuitPart {
+  partIndex: number;
+  label?: string;
+  rounds: number;
+  restBetweenRoundsSeconds: number;
+  exercises: SeedCircuitPartExercise[];
+}
+
+interface SeedCircuit {
   slug: string;
   name: string;
   sortOrder: number;
-  rounds: number;
-  restBetweenRoundsSeconds: number;
-  exercises: SeedSessionTemplateExercise[];
+  phaseSlug: string;
+  parts: SeedCircuitPart[];
 }
 
 async function main() {
@@ -76,10 +98,35 @@ async function main() {
 
   const supabase = createClient(url, serviceRoleKey);
 
-  const raw = readFileSync(path.join(__dirname, "..", "seed", "trees.json"), "utf-8");
-  const data = JSON.parse(raw) as { families: SeedFamily[] };
+  // 1. Phases.
+  const phasesRaw = readFileSync(path.join(__dirname, "..", "seed", "phases.json"), "utf-8");
+  const phasesData = JSON.parse(phasesRaw) as { phases: SeedPhase[] };
 
-  for (const family of data.families) {
+  const { error: phasesError } = await supabase.from("phases").upsert(
+    phasesData.phases.map((p) => ({
+      slug: p.slug,
+      name: p.name,
+      sort_order: p.sortOrder,
+      prerequisites_text: p.prerequisitesText,
+    })),
+    { onConflict: "slug" }
+  );
+  if (phasesError) throw new Error(`Échec upsert phases: ${phasesError.message}`);
+
+  const { data: allPhases, error: allPhasesError } = await supabase.from("phases").select("id, slug");
+  if (allPhasesError || !allPhases) throw new Error(`Échec lecture des phases: ${allPhasesError?.message}`);
+  const phaseIdBySlug = new Map(allPhases.map((p) => [p.slug, p.id]));
+
+  console.log(`✓ Phases (${phasesData.phases.length})`);
+
+  // 2. Familles (compétences techniques) + exercices (niveaux).
+  const treesRaw = readFileSync(path.join(__dirname, "..", "seed", "trees.json"), "utf-8");
+  const treesData = JSON.parse(treesRaw) as { families: SeedFamily[] };
+
+  for (const family of treesData.families) {
+    const phaseId = phaseIdBySlug.get(family.phaseSlug);
+    if (!phaseId) throw new Error(`Phase inconnue "${family.phaseSlug}" pour la famille "${family.slug}"`);
+
     const { data: familyRow, error: familyError } = await supabase
       .from("exercise_families")
       .upsert(
@@ -88,6 +135,7 @@ async function main() {
           name: family.name,
           stat_tag: family.statTag,
           sort_order: family.sortOrder,
+          phase_id: phaseId,
         },
         { onConflict: "slug" }
       )
@@ -95,9 +143,23 @@ async function main() {
       .single();
 
     if (familyError || !familyRow) {
-      throw new Error(
-        `Échec upsert famille "${family.slug}": ${familyError?.message}`
-      );
+      throw new Error(`Échec upsert famille "${family.slug}": ${familyError?.message}`);
+    }
+
+    // Détache (sans supprimer) les exercices qui appartenaient à cette
+    // famille dans un seed précédent mais dont le slug n'existe plus dans le
+    // contenu actuel (ex. ancien contenu placeholder) : évite un conflit sur
+    // exercises_family_id_tier_idx quand le nouveau contenu réoccupe les
+    // mêmes tiers, sans casser sessions/user_progress qui référencent encore
+    // ces lignes (on delete cascade sur exercise_id).
+    const currentSlugs = family.exercises.map((ex) => ex.slug);
+    const { error: orphanError } = await supabase
+      .from("exercises")
+      .update({ family_id: null, tier: null, unlock_type: null, unlock_threshold: null, xp_coefficient: null })
+      .eq("family_id", familyRow.id)
+      .not("slug", "in", `(${currentSlugs.map((s) => `"${s}"`).join(",")})`);
+    if (orphanError) {
+      throw new Error(`Échec détachement des anciens exercices de "${family.slug}": ${orphanError.message}`);
     }
 
     const exerciseRows = family.exercises.map((ex) => ({
@@ -115,14 +177,13 @@ async function main() {
       .upsert(exerciseRows, { onConflict: "slug" });
 
     if (exercisesError) {
-      throw new Error(
-        `Échec upsert exercices pour "${family.slug}": ${exercisesError.message}`
-      );
+      throw new Error(`Échec upsert exercices pour "${family.slug}": ${exercisesError.message}`);
     }
 
-    console.log(`✓ ${family.name} (${family.exercises.length} exercices)`);
+    console.log(`✓ ${family.name} (${family.exercises.length} niveaux)`);
   }
 
+  // 3. Badges.
   const badgesRaw = readFileSync(path.join(__dirname, "..", "seed", "badges.json"), "utf-8");
   const badgesData = JSON.parse(badgesRaw) as { badges: SeedBadge[] };
 
@@ -142,72 +203,183 @@ async function main() {
 
   console.log(`✓ Badges (${badgesData.badges.length})`);
 
-  const templatesRaw = readFileSync(
-    path.join(__dirname, "..", "seed", "session_templates.json"),
+  // 4. Mouvements de circuit (sans famille/tier) + leurs variantes. Deux
+  // passes : d'abord les mouvements de base (pour avoir leur id), puis les
+  // variantes qui référencent ce id via variant_of_id.
+  const circuitExercisesRaw = readFileSync(
+    path.join(__dirname, "..", "seed", "circuit-exercises.json"),
     "utf-8"
   );
-  const templatesData = JSON.parse(templatesRaw) as { templates: SeedSessionTemplate[] };
+  const circuitExercisesData = JSON.parse(circuitExercisesRaw) as { exercises: SeedCircuitExercise[] };
+
+  const baseMovements = circuitExercisesData.exercises.filter((e) => !e.variantOfSlug);
+  const variantMovements = circuitExercisesData.exercises.filter((e) => e.variantOfSlug);
+
+  const { error: baseMovementsError } = await supabase.from("exercises").upsert(
+    baseMovements.map((e) => ({
+      slug: e.slug,
+      name: e.name,
+      // Explicite (pas juste omis) : un slug réutilisé depuis l'ancien
+      // contenu (ex. "burpee" appartenait à l'ex-famille "hiit") doit bien
+      // perdre son ancien family_id/tier, pas le garder par défaut.
+      family_id: null,
+      tier: null,
+      unlock_type: null,
+      unlock_threshold: null,
+      xp_coefficient: null,
+      variant_of_id: null,
+    })),
+    { onConflict: "slug" }
+  );
+  if (baseMovementsError) {
+    throw new Error(`Échec upsert mouvements de circuit: ${baseMovementsError.message}`);
+  }
+
+  const { data: allExercisesSoFar, error: allExercisesSoFarError } = await supabase
+    .from("exercises")
+    .select("id, slug");
+  if (allExercisesSoFarError || !allExercisesSoFar) {
+    throw new Error(`Échec lecture des exercices: ${allExercisesSoFarError?.message}`);
+  }
+  const exerciseIdBySlugSoFar = new Map(allExercisesSoFar.map((e) => [e.slug, e.id]));
+
+  const { error: variantMovementsError } = await supabase.from("exercises").upsert(
+    variantMovements.map((e) => {
+      const variantOfId = exerciseIdBySlugSoFar.get(e.variantOfSlug!);
+      if (!variantOfId) {
+        throw new Error(`Mouvement de base inconnu "${e.variantOfSlug}" pour la variante "${e.slug}"`);
+      }
+      return {
+        slug: e.slug,
+        name: e.name,
+        variant_of_id: variantOfId,
+        family_id: null,
+        tier: null,
+        unlock_type: null,
+        unlock_threshold: null,
+        xp_coefficient: null,
+      };
+    }),
+    { onConflict: "slug" }
+  );
+  if (variantMovementsError) {
+    throw new Error(`Échec upsert variantes de circuit: ${variantMovementsError.message}`);
+  }
+
+  console.log(
+    `✓ Mouvements de circuit (${baseMovements.length} de base, ${variantMovements.length} variantes)`
+  );
+
+  // Nettoyage des familles d'un seed précédent qui n'existent plus dans
+  // trees.json (ex. "hiit", devenu un circuit plutôt qu'une compétence
+  // technique) : supprimable sans risque une fois qu'on a vérifié qu'aucun
+  // exercice ne la référence plus (orphelinage ci-dessus).
+  const currentFamilySlugs = new Set(treesData.families.map((f) => f.slug));
+  const { data: staleFamilies, error: staleFamiliesError } = await supabase
+    .from("exercise_families")
+    .select("id, slug");
+  if (staleFamiliesError) {
+    throw new Error(`Échec lecture des familles pour nettoyage: ${staleFamiliesError.message}`);
+  }
+  for (const fam of staleFamilies ?? []) {
+    if (currentFamilySlugs.has(fam.slug)) continue;
+    const { count, error: countError } = await supabase
+      .from("exercises")
+      .select("id", { count: "exact", head: true })
+      .eq("family_id", fam.id);
+    if (countError) throw new Error(`Échec vérification famille obsolète "${fam.slug}": ${countError.message}`);
+    if (count && count > 0) {
+      console.log(`⚠ Famille obsolète "${fam.slug}" conservée : ${count} exercice(s) y référencent encore.`);
+      continue;
+    }
+    const { error: deleteFamilyError } = await supabase.from("exercise_families").delete().eq("id", fam.id);
+    if (deleteFamilyError) throw new Error(`Échec suppression famille obsolète "${fam.slug}": ${deleteFamilyError.message}`);
+    console.log(`✓ Famille obsolète "${fam.slug}" supprimée (plus aucun exercice ne la référence).`);
+  }
+
+  // 5. Circuits (avec leurs parties). Repartir de zéro à chaque seed plutôt
+  // que d'upsert les parties/exercices : plus simple pour refléter
+  // exactement le JSON (ajout/retrait/réordonnancement). Supprimer les
+  // parties d'un circuit cascade sur ses session_template_exercises.
+  const circuitsRaw = readFileSync(path.join(__dirname, "..", "seed", "circuits.json"), "utf-8");
+  const circuitsData = JSON.parse(circuitsRaw) as { circuits: SeedCircuit[] };
 
   const { data: allExercises, error: allExercisesError } = await supabase
     .from("exercises")
     .select("id, slug");
   if (allExercisesError || !allExercises) {
-    throw new Error(`Échec lecture des exercices pour les templates: ${allExercisesError?.message}`);
+    throw new Error(`Échec lecture des exercices pour les circuits: ${allExercisesError?.message}`);
   }
   const exerciseIdBySlug = new Map(allExercises.map((e) => [e.slug, e.id]));
 
-  for (const template of templatesData.templates) {
-    const { data: templateRow, error: templateError } = await supabase
+  for (const circuit of circuitsData.circuits) {
+    const phaseId = phaseIdBySlug.get(circuit.phaseSlug);
+    if (!phaseId) throw new Error(`Phase inconnue "${circuit.phaseSlug}" pour le circuit "${circuit.slug}"`);
+
+    const { data: circuitRow, error: circuitError } = await supabase
       .from("session_templates")
       .upsert(
-        {
-          slug: template.slug,
-          name: template.name,
-          sort_order: template.sortOrder,
-          rounds: template.rounds,
-          rest_between_rounds_seconds: template.restBetweenRoundsSeconds,
-        },
+        { slug: circuit.slug, name: circuit.name, sort_order: circuit.sortOrder, phase_id: phaseId },
         { onConflict: "slug" }
       )
       .select("id")
       .single();
 
-    if (templateError || !templateRow) {
-      throw new Error(`Échec upsert template "${template.slug}": ${templateError?.message}`);
+    if (circuitError || !circuitRow) {
+      throw new Error(`Échec upsert circuit "${circuit.slug}": ${circuitError?.message}`);
     }
 
-    // Repartir de zéro à chaque seed plutôt que d'upsert : plus simple pour
-    // refléter exactement le JSON (ajout/retrait/réordonnancement d'exos).
-    const { error: deleteError } = await supabase
-      .from("session_template_exercises")
+    const { error: deletePartsError } = await supabase
+      .from("session_template_parts")
       .delete()
-      .eq("session_template_id", templateRow.id);
-    if (deleteError) {
-      throw new Error(`Échec nettoyage des exos du template "${template.slug}": ${deleteError.message}`);
+      .eq("session_template_id", circuitRow.id);
+    if (deletePartsError) {
+      throw new Error(`Échec nettoyage des parties du circuit "${circuit.slug}": ${deletePartsError.message}`);
     }
 
-    const exerciseRows = template.exercises.map((ex) => {
-      const exerciseId = exerciseIdBySlug.get(ex.exerciseSlug);
-      if (!exerciseId) {
-        throw new Error(`Exercice inconnu "${ex.exerciseSlug}" dans le template "${template.slug}"`);
+    let exerciseCount = 0;
+    for (const part of circuit.parts) {
+      const { data: partRow, error: partError } = await supabase
+        .from("session_template_parts")
+        .insert({
+          session_template_id: circuitRow.id,
+          part_index: part.partIndex,
+          label: part.label ?? null,
+          rounds: part.rounds,
+          rest_between_rounds_seconds: part.restBetweenRoundsSeconds,
+        })
+        .select("id")
+        .single();
+
+      if (partError || !partRow) {
+        throw new Error(`Échec insertion partie ${part.partIndex} du circuit "${circuit.slug}": ${partError?.message}`);
       }
-      return {
-        session_template_id: templateRow.id,
-        exercise_id: exerciseId,
-        target_sets: ex.targetSets,
-        target_performance: ex.targetPerformance,
-        rest_between_sets_seconds: ex.restBetweenSetsSeconds,
-        rest_after_exercise_seconds: ex.restAfterExerciseSeconds,
-        sort_order: ex.sortOrder,
-      };
-    });
 
-    const { error: insertError } = await supabase.from("session_template_exercises").insert(exerciseRows);
-    if (insertError) {
-      throw new Error(`Échec insertion des exos du template "${template.slug}": ${insertError.message}`);
+      const exerciseRows = part.exercises.map((ex) => {
+        const exerciseId = exerciseIdBySlug.get(ex.exerciseSlug);
+        if (!exerciseId) {
+          throw new Error(`Exercice inconnu "${ex.exerciseSlug}" dans le circuit "${circuit.slug}"`);
+        }
+        return {
+          session_template_id: circuitRow.id,
+          part_id: partRow.id,
+          exercise_id: exerciseId,
+          target_sets: ex.targetSets,
+          target_performance: ex.targetPerformance,
+          rest_between_sets_seconds: ex.restBetweenSetsSeconds,
+          rest_after_exercise_seconds: ex.restAfterExerciseSeconds,
+          sort_order: ex.sortOrder,
+        };
+      });
+
+      const { error: insertError } = await supabase.from("session_template_exercises").insert(exerciseRows);
+      if (insertError) {
+        throw new Error(`Échec insertion des exos de la partie ${part.partIndex} du circuit "${circuit.slug}": ${insertError.message}`);
+      }
+      exerciseCount += exerciseRows.length;
     }
 
-    console.log(`✓ Template "${template.name}" (${exerciseRows.length} exercices)`);
+    console.log(`✓ Circuit "${circuit.name}" (${circuit.parts.length} partie(s), ${exerciseCount} exercices)`);
   }
 
   console.log("Seed terminé.");
