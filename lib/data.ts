@@ -559,6 +559,177 @@ export async function getPlannedSessionXpSummary(
   return { xpEarned, bonusXp };
 }
 
+export interface HistoryEntry {
+  /** "planned:<planned_session id>" or "free:<yyyy-mm-dd>" — opaque, used to route to the right detail page. */
+  id: string;
+  kind: "planned" | "free";
+  label: string;
+  /** Date used for sorting/display — completed_at for a planned session, the day itself for a free bucket. */
+  date: string;
+  exerciseCount: number;
+  xpEarned: number;
+  fullCompletion?: boolean;
+}
+
+/**
+ * Unified, reverse-chronological history: finalized planned sessions
+ * (rounds/circuits/compétences combinés dans le planificateur) and free-form
+ * logs (hors planning, via /log/libre) grouped by day — chacun devient une
+ * "carte séance" avec un résumé rapide, le détail vivant dans
+ * getPlannedSessionHistoryDetail/getFreeSessionHistoryDetail.
+ */
+export async function getHistoryEntries(userId: string, limit = 30): Promise<HistoryEntry[]> {
+  const supabase = await createClient();
+
+  const { data: plannedRows } = await supabase
+    .from("planned_sessions")
+    .select("id, label, completed_at, full_completion, planned_exercises(id)")
+    .eq("user_id", userId)
+    .eq("day_kind", "session")
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(limit);
+
+  const plannedEntries = await Promise.all(
+    (plannedRows ?? []).map(async (row) => {
+      const { xpEarned, bonusXp } = await getPlannedSessionXpSummary(userId, row.id);
+      return {
+        id: `planned:${row.id}`,
+        kind: "planned" as const,
+        label: row.label,
+        date: row.completed_at as string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exerciseCount: ((row.planned_exercises ?? []) as any[]).length,
+        xpEarned: xpEarned + bonusXp,
+        fullCompletion: row.full_completion,
+      };
+    })
+  );
+
+  // A "free" log is a sessions row no planned_sets points back to — logged
+  // outside the day plan (via /log/libre, or /log when no plan exists).
+  const { data: usedSessionIdRows } = await supabase
+    .from("planned_sets")
+    .select("session_id")
+    .eq("user_id", userId)
+    .not("session_id", "is", null);
+  const usedSessionIds = new Set((usedSessionIdRows ?? []).map((r) => r.session_id as string));
+
+  const { data: allSessions } = await supabase
+    .from("sessions")
+    .select("id, performed_at, xp_earned, exercise_id")
+    .eq("user_id", userId)
+    .order("performed_at", { ascending: false })
+    .limit(500); // generous cap — grouped by day below, most users won't get near this
+
+  const freeByDay = new Map<string, { xp: number; exerciseIds: Set<string>; latest: string }>();
+  for (const s of allSessions ?? []) {
+    if (usedSessionIds.has(s.id)) continue;
+    const day = (s.performed_at as string).slice(0, 10);
+    const bucket = freeByDay.get(day) ?? { xp: 0, exerciseIds: new Set<string>(), latest: s.performed_at as string };
+    bucket.xp += Number(s.xp_earned);
+    bucket.exerciseIds.add(s.exercise_id);
+    if (s.performed_at > bucket.latest) bucket.latest = s.performed_at as string;
+    freeByDay.set(day, bucket);
+  }
+
+  const freeEntries: HistoryEntry[] = [...freeByDay.entries()].map(([day, bucket]) => ({
+    id: `free:${day}`,
+    kind: "free",
+    label: "Séance libre",
+    date: bucket.latest,
+    exerciseCount: bucket.exerciseIds.size,
+    xpEarned: bucket.xp,
+  }));
+
+  return [...plannedEntries, ...freeEntries]
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, limit);
+}
+
+export interface HistorySetDetail {
+  exerciseName: string;
+  unlockType: UnlockType;
+  performance: number;
+  xpEarned: number;
+  performedAt: string;
+}
+
+/** Every actual performance logged within a finalized planned session — one row per validated set. */
+export async function getPlannedSessionHistoryDetail(
+  userId: string,
+  plannedSessionId: string
+): Promise<{ label: string; completedAt?: string; sets: HistorySetDetail[] } | null> {
+  const supabase = await createClient();
+
+  const { data: sessionRow } = await supabase
+    .from("planned_sessions")
+    .select("id, label, completed_at")
+    .eq("id", plannedSessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!sessionRow) return null;
+
+  const { data: exerciseRows } = await supabase
+    .from("planned_exercises")
+    .select("id, planned_sets(session_id)")
+    .eq("planned_session_id", plannedSessionId);
+
+  const sessionIds = [
+    ...new Set(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (exerciseRows ?? []).flatMap((e: any) => (e.planned_sets ?? []).map((s: any) => s.session_id)).filter(Boolean)
+    ),
+  ];
+
+  const { data: loggedSessions } = sessionIds.length
+    ? await supabase
+        .from("sessions")
+        .select("performed_at, reps_per_set, duration_seconds, xp_earned, exercises(name, unlock_type)")
+        .in("id", sessionIds)
+        .order("performed_at")
+    : { data: [] };
+
+  const sets: HistorySetDetail[] = (loggedSessions ?? []).map((s) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ex = (s as any).exercises as { name?: string; unlock_type?: string } | null;
+    return {
+      exerciseName: ex?.name ?? "Exercice",
+      unlockType: (ex?.unlock_type as UnlockType) ?? "reps",
+      performance: s.reps_per_set ?? s.duration_seconds ?? 0,
+      xpEarned: Number(s.xp_earned),
+      performedAt: s.performed_at,
+    };
+  });
+
+  return { label: sessionRow.label, completedAt: sessionRow.completed_at ?? undefined, sets };
+}
+
+/** Every performance logged outside the day plan on a given calendar day. */
+export async function getFreeSessionHistoryDetail(userId: string, day: string): Promise<HistorySetDetail[]> {
+  const supabase = await createClient();
+
+  const { data: sessions } = await supabase
+    .from("sessions")
+    .select("performed_at, reps_per_set, duration_seconds, xp_earned, exercises(name, unlock_type)")
+    .eq("user_id", userId)
+    .gte("performed_at", `${day}T00:00:00.000Z`)
+    .lt("performed_at", `${day}T23:59:59.999Z`)
+    .order("performed_at");
+
+  return (sessions ?? []).map((s) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ex = (s as any).exercises as { name?: string; unlock_type?: string } | null;
+    return {
+      exerciseName: ex?.name ?? "Exercice",
+      unlockType: (ex?.unlock_type as UnlockType) ?? "reps",
+      performance: s.reps_per_set ?? s.duration_seconds ?? 0,
+      xpEarned: Number(s.xp_earned),
+      performedAt: s.performed_at,
+    };
+  });
+}
+
 /**
  * When a tier is mastered (in-app validation or self-report), every lower
  * tier of the same family is marked mastered too — a player who can do tier

@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { getRecentSessions } from "@/lib/data";
+import { getHistoryEntries } from "@/lib/data";
 
 export const metadata = { title: "Historique — Calisthenics RPG" };
 
@@ -23,39 +24,38 @@ export default async function HistoryPage() {
     );
   }
 
-  const sessions = await getRecentSessions(userId, 100);
+  const entries = await getHistoryEntries(userId, 50);
 
   return (
     <main className="flex flex-1 flex-col px-6 py-8 max-w-xl mx-auto w-full gap-4">
       <h1 className="font-display text-xl font-bold">Historique des séances</h1>
 
-      {sessions.length === 0 ? (
+      {entries.length === 0 ? (
         <p className="text-sm text-muted">Aucune séance enregistrée pour l&apos;instant.</p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {sessions.map((s) => {
-            const exerciseName =
-              (s as { exercises?: { name?: string } | null }).exercises?.name ??
-              "Exercice";
-            const performance =
-              s.reps_per_set != null
-                ? `${s.sets} × ${s.reps_per_set} reps`
-                : `${s.sets} × ${s.duration_seconds}s`;
-
+          {entries.map((entry) => {
+            const [, key] = entry.id.split(":");
+            const href = entry.kind === "planned" ? `/history/session/${key}` : `/history/free/${key}`;
             return (
-              <li
-                key={s.id}
-                className="panel-rpg p-3 flex items-center justify-between text-sm"
-              >
-                <div>
-                  <p className="font-medium">{exerciseName}</p>
-                  <p className="text-xs text-muted">
-                    {performance} · {formatDate(s.performed_at)}
-                  </p>
-                </div>
-                <span className="text-accent-strong font-medium">
-                  +{s.xp_earned} XP
-                </span>
+              <li key={entry.id}>
+                <Link
+                  href={href}
+                  className={`p-3 flex items-center justify-between text-sm transition-colors ${
+                    entry.fullCompletion ? "panel-rpg panel-rpg-gold" : "panel-rpg hover:border-accent"
+                  }`}
+                >
+                  <div>
+                    <p className="font-medium">
+                      {entry.label}
+                      {entry.fullCompletion ? <span className="text-gold ml-2">✓</span> : null}
+                    </p>
+                    <p className="text-xs text-muted">
+                      {entry.exerciseCount} exercice{entry.exerciseCount > 1 ? "s" : ""} · {formatDate(entry.date)}
+                    </p>
+                  </div>
+                  <span className="text-accent-strong font-medium shrink-0">+{entry.xpEarned} XP</span>
+                </Link>
               </li>
             );
           })}
