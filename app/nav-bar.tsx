@@ -14,7 +14,7 @@ const LINKS = [
   { href: "/profile", label: "Profil" },
 ] as const;
 
-const HIDDEN_ON = ["/login", "/auth"];
+const HIDDEN_ON = ["/login", "/auth", "/onboarding"];
 
 /**
  * Fixed top header with a hamburger menu — a full-screen panel is simpler

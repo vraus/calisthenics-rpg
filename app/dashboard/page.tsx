@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import {
   getFamiliesWithExercises,
+  getProfile,
   getRecentSessions,
   getRestDayCompletionDates,
   getUserProgress,
@@ -24,6 +26,12 @@ export default async function DashboardPage() {
       </main>
     );
   }
+
+  // Point d'entrée principal après connexion (voir app/page.tsx et
+  // app/login/actions.ts) : c'est ici qu'on redirige vers le questionnaire
+  // de placement si le joueur ne l'a jamais fait.
+  const profile = await getProfile(userId);
+  if (profile && !profile.onboardingCompletedAt) redirect("/onboarding");
 
   const [familiesWithExercises, progress, recentSessions, allSessions, bonusXp, restDayDates, plan] =
     await Promise.all([
