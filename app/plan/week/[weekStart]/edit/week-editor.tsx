@@ -149,6 +149,23 @@ export default function WeekEditor({
   const allExercises = [...skillExercises, ...circuitOnlyExercises];
   const exerciseById = new Map(allExercises.map((ex) => [ex.id, ex]));
   const firstExercise = skillExercises[0];
+
+  /**
+   * Un exercice de circuit (ex. "Burpee") et ses variantes (ex. "Burpee sans
+   * pompes") — le mouvement de base d'abord, puis ses variantes. Utilisé
+   * pour la ligne d'un exercice ajouté depuis un circuit : on ne propose que
+   * ce mouvement-là et ses variantes, pas tout le catalogue (voir
+   * variantGroupFor plus bas pour la distinction avec le select "compétence
+   * technique").
+   */
+  function variantGroupFor(exerciseId: string): Exercise[] {
+    const ex = exerciseById.get(exerciseId);
+    if (!ex) return [];
+    const baseId = ex.variantOfId ?? ex.id;
+    const base = exerciseById.get(baseId);
+    const variants = allExercises.filter((e) => e.variantOfId === baseId);
+    return base ? [base, ...variants] : variants;
+  }
   const sortedPhases = [...phases].sort((a, b) => a.sortOrder - b.sortOrder);
   const [phaseFilter, setPhaseFilter] = useState<string | "all">(currentPhaseId ?? "all");
   const visibleTemplates =
@@ -278,10 +295,30 @@ export default function WeekEditor({
 
   function handleExerciseChange(dayOfWeek: DayOfWeek, rowIndex: number, exerciseId: string) {
     const exercise = exerciseById.get(exerciseId);
-    updateExerciseRow(dayOfWeek, rowIndex, {
-      exerciseId,
-      targetPerformance: exercise?.unlockThreshold ?? 1,
-    });
+    setDays((prev) =>
+      prev.map((d) =>
+        d.dayOfWeek !== dayOfWeek
+          ? d
+          : {
+              ...d,
+              exercises: d.exercises.map((e, i) =>
+                i !== rowIndex
+                  ? e
+                  : {
+                      ...e,
+                      exerciseId,
+                      // Un mouvement de circuit n'a pas de seuil de maîtrise
+                      // propre (ce n'est pas une compétence technique) :
+                      // basculer vers une variante ne doit pas écraser
+                      // l'objectif déjà réglé par le circuit (ex. burpee
+                      // x10) — seul un vrai changement de compétence
+                      // technique en propose un nouveau.
+                      targetPerformance: exercise?.unlockThreshold ?? e.targetPerformance,
+                    }
+              ),
+            }
+      )
+    );
   }
 
   function addExerciseRow(dayOfWeek: DayOfWeek) {
@@ -407,6 +444,11 @@ export default function WeekEditor({
                 const unit = exercise?.unlockType === "duration" ? "s" : "reps";
                 const part = row.partKey ? day.parts.find((p) => p.key === row.partKey) : undefined;
                 const showPartHeader = part && allRows[rowIndex - 1]?.partKey !== row.partKey;
+                // Une ligne ajoutée depuis un circuit ne propose que ce
+                // mouvement et ses variantes (pas tout le catalogue) — une
+                // ligne ajoutée via "+ Ajouter un exercice" garde le
+                // sélecteur complet par compétence technique.
+                const variantOptions = row.partKey ? variantGroupFor(row.exerciseId) : [];
                 // Parties du même circuit ajouté, dans l'ordre où on les
                 // enchaîne réellement (une partie entière avant la suivante).
                 const groupParts = part ? day.parts.filter((p) => p.groupKey === part.groupKey) : [];
@@ -480,42 +522,59 @@ export default function WeekEditor({
                     ) : null}
                   <div className="rounded-lg border border-border p-2 flex flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <select
-                        value={row.exerciseId}
-                        onChange={(e) => handleExerciseChange(day.dayOfWeek, rowIndex, e.target.value)}
-                        className="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-surface px-3 py-2 text-foreground text-sm"
-                      >
-                        {(
-                          // La famille de l'exercice déjà choisi sur cette
-                          // ligne reste visible même filtrée par une autre
-                          // zone — sinon le select retombe visuellement sur
-                          // la 1ʳᵉ option sans que la ligne change vraiment.
-                          phaseFilter === "all"
-                            ? familiesWithExercises
-                            : familiesWithExercises.filter(
-                                (g) =>
-                                  g.family.phaseId === phaseFilter ||
-                                  g.exercises.some((ex) => ex.id === row.exerciseId)
-                              )
-                        ).map(({ family, exercises }) => (
-                          <optgroup key={family.id} label={family.name}>
-                            {exercises.map((ex) => (
-                              <option key={ex.id} value={ex.id}>
-                                {ex.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                        {circuitOnlyExercises.length > 0 ? (
-                          <optgroup label="Mouvements de circuit">
-                            {circuitOnlyExercises.map((ex) => (
-                              <option key={ex.id} value={ex.id}>
-                                {ex.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ) : null}
-                      </select>
+                      {row.partKey ? (
+                        // Exercice de circuit : seul son mouvement de base et
+                        // ses variantes sont proposés (pas tout le catalogue).
+                        <select
+                          value={row.exerciseId}
+                          onChange={(e) => handleExerciseChange(day.dayOfWeek, rowIndex, e.target.value)}
+                          className="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-surface px-3 py-2 text-foreground text-sm"
+                        >
+                          {variantOptions.map((ex) => (
+                            <option key={ex.id} value={ex.id}>
+                              {ex.name}
+                              {ex.variantOfId ? " (variante)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select
+                          value={row.exerciseId}
+                          onChange={(e) => handleExerciseChange(day.dayOfWeek, rowIndex, e.target.value)}
+                          className="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-surface px-3 py-2 text-foreground text-sm"
+                        >
+                          {(
+                            // La famille de l'exercice déjà choisi sur cette
+                            // ligne reste visible même filtrée par une autre
+                            // zone — sinon le select retombe visuellement sur
+                            // la 1ʳᵉ option sans que la ligne change vraiment.
+                            phaseFilter === "all"
+                              ? familiesWithExercises
+                              : familiesWithExercises.filter(
+                                  (g) =>
+                                    g.family.phaseId === phaseFilter ||
+                                    g.exercises.some((ex) => ex.id === row.exerciseId)
+                                )
+                          ).map(({ family, exercises }) => (
+                            <optgroup key={family.id} label={family.name}>
+                              {exercises.map((ex) => (
+                                <option key={ex.id} value={ex.id}>
+                                  {ex.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
+                          {circuitOnlyExercises.length > 0 ? (
+                            <optgroup label="Mouvements de circuit">
+                              {circuitOnlyExercises.map((ex) => (
+                                <option key={ex.id} value={ex.id}>
+                                  {ex.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ) : null}
+                        </select>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeExerciseRow(day.dayOfWeek, rowIndex)}
