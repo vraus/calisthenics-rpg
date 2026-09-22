@@ -91,6 +91,8 @@ export interface PlannedSessionPart {
   label?: string;
   rounds: number;
   restBetweenRoundsSeconds: number;
+  /** Circuit d'origine, si cette partie vient d'un "+ Ajouter un circuit" — undefined si construite à la main. */
+  sessionTemplateId?: string;
 }
 
 export type DayKind = "rest" | "session";

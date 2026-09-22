@@ -39,6 +39,8 @@ interface PartDraft {
   groupName: string;
   rounds: number;
   restBetweenRoundsSeconds: number;
+  /** Circuit d'origine (session_templates.id) — undefined si non issue d'un circuit préfait. */
+  templateId?: string;
 }
 
 interface DayDraft {
@@ -99,6 +101,7 @@ function buildInitialDays(plan: WeeklyPlan | null): DayDraft[] {
       groupName: p.label ?? "Circuit",
       rounds: p.rounds,
       restBetweenRoundsSeconds: p.restBetweenRoundsSeconds,
+      templateId: p.sessionTemplateId,
     }));
     const partKeyByIndex = new Map(existing.parts.map((p, i) => [p.partIndex, parts[i].key]));
     const rows: ExerciseRow[] = existing.exercises.map((e) => ({
@@ -216,6 +219,7 @@ export default function WeekEditor({
       key: `${uid}-p${p.partIndex}`,
       groupKey: uid,
       groupName: template.name,
+      templateId: template.id,
       rounds: p.rounds,
       restBetweenRoundsSeconds: p.restBetweenRoundsSeconds,
     }));

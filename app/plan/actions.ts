@@ -59,6 +59,8 @@ interface DayPartInput {
   label?: string;
   rounds: number;
   restBetweenRoundsSeconds: number;
+  /** Circuit d'origine (session_templates.id), pour le suivi de complétion des circuits — voir finalizePlannedSessionInternal. */
+  templateId?: string;
 }
 
 interface DayInput {
@@ -175,6 +177,18 @@ export async function saveWeeklyPlanDays(
     : { data: [] };
   const validExerciseIds = new Set((exerciseRows ?? []).map((e) => e.id));
 
+  const allTemplateIds = [
+    ...new Set(
+      days
+        .filter((d) => d.kind === "session")
+        .flatMap((d) => (d.parts ?? []).map((p) => p.templateId).filter((id): id is string => Boolean(id)))
+    ),
+  ];
+  const { data: templateRows } = allTemplateIds.length
+    ? await supabase.from("session_templates").select("id").in("id", allTemplateIds)
+    : { data: [] };
+  const validTemplateIds = new Set((templateRows ?? []).map((t) => t.id));
+
   for (const day of days) {
     const existing = existingByDay.get(day.dayOfWeek);
     const locked = existing
@@ -238,6 +252,7 @@ export async function saveWeeklyPlanDays(
             label: part.label ?? null,
             rounds: partRounds,
             rest_between_rounds_seconds: partRest,
+            session_template_id: part.templateId && validTemplateIds.has(part.templateId) ? part.templateId : null,
           })
           .select("id")
           .single();
@@ -437,11 +452,18 @@ export interface ValidateSetResult extends LogSessionResult {
   perfectWeekBonusXp?: number;
 }
 
-/** Validates one planned set: logs sets=1 at the exercise's target performance. */
-export async function validateSet(plannedSetId: string): Promise<ValidateSetResult> {
+/**
+ * Validates one planned set: logs sets=1 at the reps/duration actually
+ * performed (entered at validation time — falls back to the planned target
+ * only if not provided, for callers that predate this).
+ */
+export async function validateSet(plannedSetId: string, actualPerformance?: number): Promise<ValidateSetResult> {
   const supabase = await createClient();
   const userId = await getAuthenticatedUserId();
   if (!userId) return { ok: false, error: "Non connecté." };
+  if (actualPerformance !== undefined && (!Number.isFinite(actualPerformance) || actualPerformance <= 0)) {
+    return { ok: false, error: "Renseigne combien tu as fait." };
+  }
 
   const { data: setRow, error: setError } = await supabase
     .from("planned_sets")
@@ -475,10 +497,11 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
     xpCoefficient: Number(exerciseRow.xp_coefficient),
   };
 
+  const performanceValue = actualPerformance ?? plannedExercise.target_performance;
   const performance =
     exercise.unlockType === "reps"
-      ? { repsPerSet: plannedExercise.target_performance }
-      : { durationSeconds: plannedExercise.target_performance };
+      ? { repsPerSet: performanceValue }
+      : { durationSeconds: performanceValue };
 
   const result = await logExercisePerformance(supabase, userId, exercise, 1, performance);
   if (!result.ok) return result;
@@ -492,11 +515,17 @@ export async function validateSet(plannedSetId: string): Promise<ValidateSetResu
   return await maybeFinalizeAfterSet(supabase, plannedExercise.planned_session_id, result);
 }
 
-/** Shortcut: validates every remaining set of an exercise in one go. */
-export async function validateRemainingSets(plannedExerciseId: string): Promise<ValidateSetResult> {
+/** Shortcut: validates every remaining set of an exercise in one go, all at the same entered performance. */
+export async function validateRemainingSets(
+  plannedExerciseId: string,
+  actualPerformance?: number
+): Promise<ValidateSetResult> {
   const supabase = await createClient();
   const userId = await getAuthenticatedUserId();
   if (!userId) return { ok: false, error: "Non connecté." };
+  if (actualPerformance !== undefined && (!Number.isFinite(actualPerformance) || actualPerformance <= 0)) {
+    return { ok: false, error: "Renseigne combien tu as fait." };
+  }
 
   const [{ data: plannedExercise, error: plannedExError }, { data: remainingSets, error: remainingError }] =
     await Promise.all([
@@ -537,10 +566,11 @@ export async function validateRemainingSets(plannedExerciseId: string): Promise<
     xpCoefficient: Number(exerciseRow.xp_coefficient),
   };
 
+  const performanceValue = actualPerformance ?? plannedExercise.target_performance;
   const performance =
     exercise.unlockType === "reps"
-      ? { repsPerSet: plannedExercise.target_performance }
-      : { durationSeconds: plannedExercise.target_performance };
+      ? { repsPerSet: performanceValue }
+      : { durationSeconds: performanceValue };
 
   const result = await logExercisePerformance(
     supabase,
@@ -691,6 +721,8 @@ async function finalizePlannedSessionInternal(
     }
 
     perfectWeekBonusXp = await maybeAwardPerfectWeek(supabase, userId, sessionRow.weekly_plan_id);
+
+    await recordCompletedCircuits(supabase, userId, plannedSessionId);
   }
 
   revalidatePath("/plan");
@@ -699,6 +731,57 @@ async function finalizePlannedSessionInternal(
   revalidatePath("/profile");
 
   return { ok: true, fullCompletion, bonusXp, perfectWeekBonusXp };
+}
+
+/**
+ * "Valider un circuit au moins une fois" (condition de passage de phase,
+ * user_circuit_completions posé en 0010) : ne s'applique qu'aux séances
+ * entièrement terminées (appelant garanti par finalizePlannedSessionInternal
+ * dans sa branche fullCompletion). Un circuit n'est considéré validé que si
+ * TOUTES ses parties (pas juste certaines) étaient présentes dans cette
+ * séance — un circuit auquel une partie a été retirée dans l'éditeur ne
+ * compte pas comme fait.
+ */
+async function recordCompletedCircuits(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  plannedSessionId: string
+): Promise<void> {
+  const { data: sessionParts } = await supabase
+    .from("planned_session_parts")
+    .select("part_index, session_template_id")
+    .eq("planned_session_id", plannedSessionId)
+    .not("session_template_id", "is", null);
+
+  const partIndexesByTemplate = new Map<string, Set<number>>();
+  for (const p of sessionParts ?? []) {
+    const templateId = p.session_template_id as string;
+    (partIndexesByTemplate.get(templateId) ?? partIndexesByTemplate.set(templateId, new Set()).get(templateId)!).add(
+      p.part_index
+    );
+  }
+  if (partIndexesByTemplate.size === 0) return;
+
+  const { data: allParts } = await supabase
+    .from("session_template_parts")
+    .select("session_template_id")
+    .in("session_template_id", [...partIndexesByTemplate.keys()]);
+  const totalPartsByTemplate = new Map<string, number>();
+  for (const p of allParts ?? []) {
+    totalPartsByTemplate.set(p.session_template_id, (totalPartsByTemplate.get(p.session_template_id) ?? 0) + 1);
+  }
+
+  const completedTemplateIds = [...partIndexesByTemplate.entries()]
+    .filter(([templateId, indexes]) => indexes.size > 0 && indexes.size === totalPartsByTemplate.get(templateId))
+    .map(([templateId]) => templateId);
+  if (completedTemplateIds.length === 0) return;
+
+  await supabase
+    .from("user_circuit_completions")
+    .upsert(
+      completedTemplateIds.map((session_template_id) => ({ user_id: userId, session_template_id })),
+      { onConflict: "user_id,session_template_id", ignoreDuplicates: true }
+    );
 }
 
 async function maybeAwardPerfectWeek(

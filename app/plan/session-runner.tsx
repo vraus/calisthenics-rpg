@@ -30,6 +30,14 @@ export default function SessionRunner({
   const [xpTotal, setXpTotal] = useState(initialSummary?.xpEarned ?? 0);
   const [badges, setBadges] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Combien de reps/secondes réellement faites, éditable par exercice —
+  // pré-rempli avec la cible du planning (0 pour un objectif "X MAX", à
+  // renseigner soi-même en validant). Partagé par toutes les séries d'un
+  // même exercice : la case se réédite entre deux clics si une série
+  // diffère de la précédente.
+  const [performanceByExercise, setPerformanceByExercise] = useState<Record<string, number>>(() =>
+    Object.fromEntries(session.exercises.map((ex) => [ex.id, ex.targetPerformance]))
+  );
   const [finalized, setFinalized] = useState<{
     fullCompletion?: boolean;
     bonusXp?: number;
@@ -57,11 +65,12 @@ export default function SessionRunner({
     }
   }
 
-  function handleSet(plannedSetId: string) {
+  function handleSet(plannedSetId: string, exerciseId: string) {
     setPendingId(plannedSetId);
     setError(null);
+    const performance = performanceByExercise[exerciseId];
     startTransition(async () => {
-      const result = await validateSet(plannedSetId);
+      const result = await validateSet(plannedSetId, performance);
       if (result.ok) {
         setDoneSetIds((prev) => new Set(prev).add(plannedSetId));
       }
@@ -75,8 +84,9 @@ export default function SessionRunner({
     setError(null);
     const exercise = session.exercises.find((ex) => ex.id === plannedExerciseId);
     const remainingSetIds = exercise?.sets.filter((s) => !s.doneAt).map((s) => s.id) ?? [];
+    const performance = performanceByExercise[plannedExerciseId];
     startTransition(async () => {
-      const result = await validateRemainingSets(plannedExerciseId);
+      const result = await validateRemainingSets(plannedExerciseId, performance);
       if (result.ok) {
         setDoneSetIds((prev) => {
           const next = new Set(prev);
@@ -242,14 +252,34 @@ export default function SessionRunner({
       ) : null}
       {session.exercises.map((exercise) => {
         const remaining = exercise.sets.filter((s) => !doneSetIds.has(s.id)).length;
+        const performance = performanceByExercise[exercise.id] ?? exercise.targetPerformance;
+        const unit = exercise.unlockType === "duration" ? "s" : "reps";
         return (
           <div key={exercise.id} className="panel-rpg p-4 flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <p className="min-w-0 font-medium">{exercise.exerciseName}</p>
               <span className="shrink-0 whitespace-nowrap text-xs text-muted">
-                {exercise.targetPerformance}
+                Cible : {exercise.targetPerformance || "MAX"}
                 {exercise.unlockType === "duration" ? " s" : " reps"} / série
               </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span className="shrink-0">Fait :</span>
+              <input
+                type="number"
+                min={1}
+                value={performance === 0 ? "" : performance}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setPerformanceByExercise((prev) => ({
+                    ...prev,
+                    [exercise.id]: raw === "" ? 0 : Number(raw),
+                  }));
+                }}
+                placeholder={exercise.targetPerformance === 0 ? "?" : undefined}
+                className="w-16 shrink-0 rounded-lg border border-border bg-surface px-2 py-1 text-foreground text-sm"
+              />
+              <span className="shrink-0">{unit}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {exercise.sets.map((set) => {
@@ -259,7 +289,7 @@ export default function SessionRunner({
                     key={set.id}
                     type="button"
                     disabled={done || (isPending && pendingId === set.id)}
-                    onClick={() => handleSet(set.id)}
+                    onClick={() => handleSet(set.id, exercise.id)}
                     className={`h-10 w-10 rounded-lg border text-sm font-medium transition-all ${PRESS_EFFECT} ${
                       done
                         ? "border-gold bg-locked text-gold"

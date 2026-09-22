@@ -261,6 +261,7 @@ function mapPlannedSessionParts(partRows: any[]): PlannedSessionPart[] {
     label: p.label ?? undefined,
     rounds: p.rounds,
     restBetweenRoundsSeconds: p.rest_between_rounds_seconds,
+    sessionTemplateId: p.session_template_id ?? undefined,
   }));
 }
 
@@ -416,7 +417,7 @@ export async function getWeeklyPlan(userId: string, weekStart: string): Promise<
   const { data: partRows, error: partsError } = sessionIds.length
     ? await supabase
         .from("planned_session_parts")
-        .select("id, planned_session_id, part_index, label, rounds, rest_between_rounds_seconds")
+        .select("id, planned_session_id, part_index, label, rounds, rest_between_rounds_seconds, session_template_id")
         .in("planned_session_id", sessionIds)
         .order("part_index")
     : { data: [], error: null };
@@ -494,7 +495,7 @@ export async function getPlannedSessionDetail(
 
   const { data: partRows, error: partsError } = await supabase
     .from("planned_session_parts")
-    .select("id, planned_session_id, part_index, label, rounds, rest_between_rounds_seconds")
+    .select("id, planned_session_id, part_index, label, rounds, rest_between_rounds_seconds, session_template_id")
     .eq("planned_session_id", sessionRow.id)
     .order("part_index");
 
