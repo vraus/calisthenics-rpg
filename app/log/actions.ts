@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import {
+  cascadeMasterLowerTiers,
   getAllExercises,
   getFamilies,
   getRestDayCompletionDates,
@@ -186,13 +187,22 @@ export async function logExercisePerformance(
     return { ok: false, error: "Échec de la mise à jour de la progression." };
   }
 
+  // Fraîchement maîtrisé (pas juste re-validé) : les niveaux inférieurs de la
+  // même compétence technique sont considérés acquis aussi, pour ne pas
+  // forcer un utilisateur déjà fort à re-prouver chaque niveau un par un.
+  const cascadedIds =
+    justMastered && !existingProgress?.mastered && exercise.familyId && exercise.tier
+      ? await cascadeMasterLowerTiers(supabase, userId, exercise.familyId, exercise.tier)
+      : [];
+  const cascadedSet = new Set(cascadedIds);
+
   const progressAfter: UserProgress[] = (progressBefore ?? [])
     .filter((p) => p.exercise_id !== exercise.id)
     .map((p) => ({
       userId: p.user_id,
       exerciseId: p.exercise_id,
       xpInExercise: Number(p.xp_in_exercise),
-      mastered: p.mastered,
+      mastered: p.mastered || cascadedSet.has(p.exercise_id),
       masteredAt: p.mastered_at ?? undefined,
     }));
   progressAfter.push({

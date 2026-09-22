@@ -546,6 +546,62 @@ export async function getPlannedSessionXpSummary(
   return { xpEarned, bonusXp };
 }
 
+/**
+ * When a tier is mastered (in-app validation or self-report), every lower
+ * tier of the same family is marked mastered too — a player who can do tier
+ * 3 obviously could do tiers 1 and 2, no need to make them re-prove it.
+ * Never overwrites an already-mastered row (keeps its original mastered_at)
+ * and never touches xp_in_exercise (no XP retroactively granted for tiers
+ * skipped this way). Returns the exercise ids it newly mastered, so callers
+ * evaluating badges/progress right after can account for them too.
+ */
+export async function cascadeMasterLowerTiers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  familyId: string,
+  tier: number
+): Promise<string[]> {
+  if (tier <= 1) return [];
+
+  const { data: lowerExercises } = await supabase
+    .from("exercises")
+    .select("id")
+    .eq("family_id", familyId)
+    .lt("tier", tier);
+  const lowerIds = (lowerExercises ?? []).map((e) => e.id);
+  if (lowerIds.length === 0) return [];
+
+  const { data: existingRows } = await supabase
+    .from("user_progress")
+    .select("exercise_id, mastered")
+    .eq("user_id", userId)
+    .in("exercise_id", lowerIds);
+  const existingById = new Map((existingRows ?? []).map((r) => [r.exercise_id, r.mastered]));
+
+  const toUpdate = lowerIds.filter((id) => existingById.get(id) === false);
+  const toInsert = lowerIds.filter((id) => !existingById.has(id));
+  const newlyMastered = [...toUpdate, ...toInsert];
+  if (newlyMastered.length === 0) return [];
+
+  const nowIso = new Date().toISOString();
+  await Promise.all([
+    toUpdate.length > 0
+      ? supabase
+          .from("user_progress")
+          .update({ mastered: true, mastered_at: nowIso })
+          .eq("user_id", userId)
+          .in("exercise_id", toUpdate)
+      : null,
+    toInsert.length > 0
+      ? supabase
+          .from("user_progress")
+          .insert(toInsert.map((id) => ({ user_id: userId, exercise_id: id, mastered: true, mastered_at: nowIso })))
+      : null,
+  ]);
+
+  return newlyMastered;
+}
+
 const DEFAULT_USERNAME_BASE = "aventurier";
 
 /**

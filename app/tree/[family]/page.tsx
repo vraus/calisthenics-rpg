@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { getExercisesByFamilySlug, getUserProgress } from "@/lib/data";
 import { buildFamilyTree, familyLevel } from "@/lib/xp";
+import { TreeNodeList } from "./tree-node-list";
 
 export default async function FamilyTreePage({
   params,
@@ -30,45 +31,7 @@ export default async function FamilyTreePage({
         </p>
       </div>
 
-      <ol className="flex flex-col gap-2">
-        {nodes.map((node, i) => {
-          const state = node.mastered
-            ? "mastered"
-            : node.unlocked
-              ? "unlocked"
-              : "locked";
-
-          return (
-            <li
-              key={node.id}
-              className={`p-4 flex items-center gap-3 ${
-                state === "locked"
-                  ? "rounded-lg border border-border bg-locked text-muted"
-                  : state === "mastered"
-                    ? "panel-rpg panel-rpg-gold"
-                    : "panel-rpg"
-              }`}
-            >
-              <span className="text-xs w-6 text-center font-mono text-muted">
-                {i + 1}
-              </span>
-              <div className="flex-1">
-                <p className="font-medium">{node.name}</p>
-                <p className="text-xs text-muted">
-                  {state === "locked"
-                    ? "Pas encore recommandé"
-                    : `Seuil de maîtrise : ${node.unlockThreshold}${
-                        node.unlockType === "duration" ? " s" : " reps"
-                      }`}
-                </p>
-              </div>
-              {state === "mastered" ? (
-                <span className="text-gold text-sm font-medium">✓</span>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
+      <TreeNodeList nodes={nodes} />
     </main>
   );
 }
