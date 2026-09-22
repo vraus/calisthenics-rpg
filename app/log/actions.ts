@@ -10,6 +10,7 @@ import {
   getRestDayCompletionDates,
   getSessionCount,
   getSessionDatesForStreak,
+  maybeAdvancePhase,
 } from "@/lib/data";
 import { computeSessionXp, globalLevel, meetsUnlockThreshold } from "@/lib/xp";
 import { computeStreak } from "@/lib/streak";
@@ -25,6 +26,7 @@ export interface LogSessionResult {
   newBadgeNames?: string[];
   leveledUp?: boolean;
   newLevel?: number;
+  newPhaseName?: string;
 }
 
 /**
@@ -214,21 +216,28 @@ export async function logExercisePerformance(
 
   const afterLevel = globalLevel(progressAfter).level;
   const newBadgeNames = await awardNewBadges(supabase, userId, progressAfter);
+  const freshlyMastered = justMastered && !existingProgress?.mastered;
+  const phaseAdvanced = freshlyMastered ? await maybeAdvancePhase(supabase, userId) : null;
 
   revalidatePath("/dashboard");
   revalidatePath("/tree");
   revalidatePath("/history");
   revalidatePath("/profile");
   revalidatePath("/plan");
+  // Un changement de phase (voir maybeAdvancePhase ci-dessus) change aussi le
+  // thème par défaut (lib/theme.ts) : le layout racine doit être revalidé,
+  // pas juste les pages, sinon <html data-zone> reste sur l'ancienne valeur.
+  revalidatePath("/", "layout");
 
   return {
     ok: true,
     sessionId: sessionRow.id,
     xpEarned,
-    justMastered: justMastered && !existingProgress?.mastered,
+    justMastered: freshlyMastered,
     newBadgeNames: newBadgeNames.length > 0 ? newBadgeNames : undefined,
     leveledUp: afterLevel > beforeLevel,
     newLevel: afterLevel > beforeLevel ? afterLevel : undefined,
+    newPhaseName: phaseAdvanced?.newPhaseName,
   };
 }
 

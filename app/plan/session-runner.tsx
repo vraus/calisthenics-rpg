@@ -4,7 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PlannedSession } from "@/lib/types";
 import { validateSet, validateRemainingSets, finalizePlannedSession, markRestDayDone } from "./actions";
-import { useLevelUp, LevelUpOverlay, BadgeChips, usePerfectWeek, PerfectWeekOverlay } from "../xp-feedback";
+import {
+  useLevelUp,
+  LevelUpOverlay,
+  BadgeChips,
+  usePerfectWeek,
+  PerfectWeekOverlay,
+  usePhaseAdvanced,
+  PhaseAdvancedOverlay,
+} from "../xp-feedback";
 import { fireConfettiBurst, fireConfettiCelebration, fireConfettiGrand } from "../confetti";
 
 interface InitialSummary {
@@ -49,6 +57,16 @@ export default function SessionRunner({
   );
   const { level: levelUp, trigger: triggerLevelUp } = useLevelUp();
   const { active: perfectWeek, trigger: triggerPerfectWeek } = usePerfectWeek();
+  const { phaseName: phaseAdvanced, trigger: triggerPhaseAdvanced } = usePhaseAdvanced();
+
+  // Une phase qui vient de se compléter change aussi le thème par défaut
+  // (lib/theme.ts) : router.refresh() force le layout racine (<html
+  // data-zone>) à se re-rendre tout de suite, sans attendre une navigation.
+  function celebratePhaseAdvance(newPhaseName?: string) {
+    if (!newPhaseName) return;
+    triggerPhaseAdvanced(newPhaseName);
+    router.refresh();
+  }
 
   /** Escalating confetti for a just-finalized day, plus the perfect-week wave on top. */
   function celebrateFinalization(fullCompletion?: boolean, perfectWeekBonusXp?: number) {
@@ -113,6 +131,7 @@ export default function SessionRunner({
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
       celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
+      celebratePhaseAdvance(result.newPhaseName);
     });
   }
 
@@ -130,6 +149,7 @@ export default function SessionRunner({
         perfectWeekBonusXp: result.perfectWeekBonusXp,
       });
       celebrateFinalization(result.fullCompletion, result.perfectWeekBonusXp);
+      celebratePhaseAdvance(result.newPhaseName);
     });
   }
 
@@ -144,6 +164,7 @@ export default function SessionRunner({
     fullCompletion?: boolean;
     bonusXp?: number;
     perfectWeekBonusXp?: number;
+    newPhaseName?: string;
   }) {
     if (!result.ok) {
       setError(result.error ?? "Erreur.");
@@ -156,6 +177,7 @@ export default function SessionRunner({
     if (result.leveledUp && result.newLevel) {
       triggerLevelUp(result.newLevel);
     }
+    celebratePhaseAdvance(result.newPhaseName);
     if (result.sessionFinalized) {
       setFinalized({
         fullCompletion: result.fullCompletion,
@@ -190,6 +212,7 @@ export default function SessionRunner({
           </button>
           <LevelUpOverlay level={levelUp} />
           <PerfectWeekOverlay active={perfectWeek} />
+          <PhaseAdvancedOverlay phaseName={phaseAdvanced} />
         </div>
       );
     }
@@ -239,6 +262,7 @@ export default function SessionRunner({
         <BadgeChips names={badges} />
         <LevelUpOverlay level={levelUp} />
         <PerfectWeekOverlay active={perfectWeek} />
+        <PhaseAdvancedOverlay phaseName={phaseAdvanced} />
       </div>
     );
   }
@@ -337,6 +361,7 @@ export default function SessionRunner({
       </button>
 
       <LevelUpOverlay level={levelUp} />
+      <PhaseAdvancedOverlay phaseName={phaseAdvanced} />
     </div>
   );
 }

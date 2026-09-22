@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { logExercisePerformance, type LogSessionResult } from "@/app/log/actions";
 import { getWeekStart } from "@/lib/week";
+import { maybeAdvancePhase } from "@/lib/data";
 import type { Exercise } from "@/lib/types";
 
 const SESSION_COMPLETE_BONUS_RATE = 0.2;
@@ -609,6 +610,7 @@ export interface FinalizeResult {
   fullCompletion?: boolean;
   bonusXp?: number;
   perfectWeekBonusXp?: number;
+  newPhaseName?: string;
 }
 
 /** User-triggered "Terminer la séance" — works at any completion level (training days only). */
@@ -704,6 +706,7 @@ async function finalizePlannedSessionInternal(
 
   let bonusXp: number | undefined;
   let perfectWeekBonusXp: number | undefined;
+  let newPhaseName: string | undefined;
 
   if (fullCompletion) {
     const { data: xpRows } = xpRowsResult;
@@ -723,14 +726,19 @@ async function finalizePlannedSessionInternal(
     perfectWeekBonusXp = await maybeAwardPerfectWeek(supabase, userId, sessionRow.weekly_plan_id);
 
     await recordCompletedCircuits(supabase, userId, plannedSessionId);
+    const phaseAdvanced = await maybeAdvancePhase(supabase, userId);
+    newPhaseName = phaseAdvanced?.newPhaseName;
   }
 
   revalidatePath("/plan");
   revalidatePath("/log");
   revalidatePath("/dashboard");
   revalidatePath("/profile");
+  // Un changement de phase change aussi le thème par défaut (lib/theme.ts) :
+  // le layout racine doit être revalidé, pas juste les pages.
+  revalidatePath("/", "layout");
 
-  return { ok: true, fullCompletion, bonusXp, perfectWeekBonusXp };
+  return { ok: true, fullCompletion, bonusXp, perfectWeekBonusXp, newPhaseName };
 }
 
 /**

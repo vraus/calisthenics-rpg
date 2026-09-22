@@ -107,6 +107,7 @@ export interface SessionTemplateExercise {
   exerciseId: string;
   exerciseName: string;
   exerciseSlug: string;
+  exerciseDescription?: string;
   unlockType: UnlockType;
   targetSets: number;
   targetPerformance: number;

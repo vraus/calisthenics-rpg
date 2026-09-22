@@ -19,6 +19,7 @@ import type {
   WeeklyPlan,
 } from "@/lib/types";
 import { levelFromXp } from "@/lib/xp";
+import { isPhaseComplete } from "@/lib/phase-progress";
 
 /**
  * Data-access layer: every read here is scoped to the authenticated user via
@@ -308,7 +309,7 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
   const { data: exerciseRows, error: exercisesError } = await supabase
     .from("session_template_exercises")
     .select(
-      "id, session_template_id, part_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type)"
+      "id, session_template_id, part_id, exercise_id, target_sets, target_performance, rest_between_sets_seconds, rest_after_exercise_seconds, sort_order, exercises(name, slug, unlock_type, description)"
     )
     .in(
       "session_template_id",
@@ -357,6 +358,7 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
           exerciseId: e.exercise_id,
           exerciseName: e.exercises?.name ?? "Exercice",
           exerciseSlug: e.exercises?.slug ?? "",
+          exerciseDescription: e.exercises?.description ?? undefined,
           unlockType: (e.exercises?.unlock_type as UnlockType) ?? "reps",
           targetSets: e.target_sets,
           targetPerformance: e.target_performance,
@@ -366,6 +368,18 @@ export async function getSessionTemplates(): Promise<SessionTemplate[]> {
         })),
     };
   });
+}
+
+/** Circuits (session_templates.id) this user has validated at least once — via a completed session or a self-report. */
+export async function getCompletedCircuitIds(userId: string): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("user_circuit_completions")
+    .select("session_template_id")
+    .eq("user_id", userId);
+
+  if (error) throw new Error(`getCompletedCircuitIds: ${error.message}`);
+  return new Set((data ?? []).map((r) => r.session_template_id));
 }
 
 const PLANNED_EXERCISE_SELECT =
@@ -784,6 +798,189 @@ export async function cascadeMasterLowerTiers(
   ]);
 
   return newlyMastered;
+}
+
+/**
+ * The reverse of cascadeMasterLowerTiers, for when a level is invalidated
+ * (app/tree/actions.ts::unmasterLevel): every higher tier of the same
+ * family that's currently mastered gets invalidated too — you can't
+ * legitimately have tier 4 without tier 2. Only touches rows that are
+ * actually mastered (nothing to do otherwise), and — same as the
+ * master-cascade direction — never touches xp_in_exercise.
+ */
+export async function cascadeUnmasterHigherTiers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  familyId: string,
+  tier: number
+): Promise<string[]> {
+  const { data: higherExercises } = await supabase
+    .from("exercises")
+    .select("id")
+    .eq("family_id", familyId)
+    .gt("tier", tier);
+  const higherIds = (higherExercises ?? []).map((e) => e.id);
+  if (higherIds.length === 0) return [];
+
+  const { data: masteredRows } = await supabase
+    .from("user_progress")
+    .select("exercise_id")
+    .eq("user_id", userId)
+    .eq("mastered", true)
+    .in("exercise_id", higherIds);
+  const toUnmaster = (masteredRows ?? []).map((r) => r.exercise_id);
+  if (toUnmaster.length === 0) return [];
+
+  await supabase
+    .from("user_progress")
+    .update({ mastered: false, mastered_at: null })
+    .eq("user_id", userId)
+    .in("exercise_id", toUnmaster);
+
+  return toUnmaster;
+}
+
+/** Shared by maybeAdvancePhase/maybeRevertPhase: is this specific phase (any phase, not necessarily the player's current one) complete for this user? */
+async function isGivenPhaseComplete(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  phaseId: string
+): Promise<boolean> {
+  const [{ data: familyRows }, { data: templateRows }] = await Promise.all([
+    supabase.from("exercise_families").select("id").eq("phase_id", phaseId),
+    supabase.from("session_templates").select("id").eq("phase_id", phaseId),
+  ]);
+  const familyIds = (familyRows ?? []).map((f) => f.id);
+  const circuitIds = (templateRows ?? []).map((t) => t.id);
+
+  const { data: exerciseRows } = familyIds.length
+    ? await supabase.from("exercises").select("id, family_id, tier").in("family_id", familyIds)
+    : { data: [] };
+  const topTierExerciseIdByFamily: string[] = [];
+  const topTierByFamily = new Map<string, { id: string; tier: number }>();
+  for (const ex of exerciseRows ?? []) {
+    const current = topTierByFamily.get(ex.family_id);
+    if (!current || ex.tier > current.tier) topTierByFamily.set(ex.family_id, { id: ex.id, tier: ex.tier });
+  }
+  for (const fid of familyIds) {
+    const top = topTierByFamily.get(fid);
+    if (top) topTierExerciseIdByFamily.push(top.id);
+  }
+
+  const [{ data: masteredRows }, { data: completedCircuitRows }] = await Promise.all([
+    supabase.from("user_progress").select("exercise_id").eq("user_id", userId).eq("mastered", true),
+    supabase.from("user_circuit_completions").select("session_template_id").eq("user_id", userId),
+  ]);
+
+  return isPhaseComplete({
+    topTierExerciseIdByFamily,
+    masteredExerciseIds: new Set((masteredRows ?? []).map((r) => r.exercise_id)),
+    circuitIds,
+    completedCircuitIds: new Set((completedCircuitRows ?? []).map((r) => r.session_template_id)),
+  });
+}
+
+/**
+ * Checks whether the player just completed their current phase (every
+ * compétence technique maxed + every circuit of that phase validated — see
+ * lib/phase-progress.ts) and, if so, advances profiles.current_phase_id to
+ * the next one. No-op if not yet placed by onboarding or already at the
+ * last phase. Called after any event that could complete a phase (mastering
+ * a level, finishing a session) — see app/log/actions.ts and
+ * app/plan/actions.ts.
+ */
+export async function maybeAdvancePhase(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<{ newPhaseId: string; newPhaseName: string } | null> {
+  // Never let a hiccup here fail the caller's already-successful action
+  // (mastering a level, finishing a session) — same reasoning as
+  // awardNewBadges.
+  try {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("current_phase_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const currentPhaseId = profileRow?.current_phase_id;
+    if (!currentPhaseId) return null;
+
+    const { data: phaseRows } = await supabase.from("phases").select("id, name, sort_order").order("sort_order");
+    const phases = phaseRows ?? [];
+    const currentIndex = phases.findIndex((p) => p.id === currentPhaseId);
+    const nextPhase = currentIndex >= 0 ? phases[currentIndex + 1] : undefined;
+    if (!nextPhase) return null; // not placed / already at the last phase
+
+    const complete = await isGivenPhaseComplete(supabase, userId, currentPhaseId);
+    if (!complete) return null;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ current_phase_id: nextPhase.id })
+      .eq("user_id", userId);
+    if (error) return null;
+
+    return { newPhaseId: nextPhase.id, newPhaseName: nextPhase.name };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The reverse check — called after invalidating a mastered level or a
+ * circuit completion (see app/tree/actions.ts): if the phase just before
+ * the player's current one no longer meets its own completion criteria
+ * (the level/circuit just invalidated was what completed it), the player
+ * drops back to that previous phase. Only steps back one phase at a time —
+ * doesn't cascade further even if an earlier phase would also now fail,
+ * since re-checking every earlier phase on every invalidation is overkill
+ * for what's meant as an occasional correction, not a live-recomputed state.
+ * If the player's manually-chosen theme (theme_zone_id) pointed at a zone
+ * beyond the phase they're dropping to, it's cleared too — it would
+ * otherwise show a zone the player no longer qualifies for.
+ */
+export async function maybeRevertPhase(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<{ revertedPhaseId: string; revertedPhaseName: string } | null> {
+  // Same reasoning as maybeAdvancePhase: never let this fail the invalidation
+  // that was already successfully applied.
+  try {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("current_phase_id, theme_zone_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const currentPhaseId = profileRow?.current_phase_id;
+    if (!currentPhaseId) return null;
+
+    const { data: phaseRows } = await supabase.from("phases").select("id, name, sort_order").order("sort_order");
+    const phases = phaseRows ?? [];
+    const currentIndex = phases.findIndex((p) => p.id === currentPhaseId);
+    const previousPhase = currentIndex > 0 ? phases[currentIndex - 1] : undefined;
+    if (!previousPhase) return null; // already at the first phase, nothing to revert to
+
+    const stillComplete = await isGivenPhaseComplete(supabase, userId, previousPhase.id);
+    if (stillComplete) return null;
+
+    const themeZonePhase = profileRow?.theme_zone_id
+      ? phases.find((p) => p.id === profileRow.theme_zone_id)
+      : undefined;
+    const clearThemeOverride = themeZonePhase && themeZonePhase.sort_order > previousPhase.sort_order;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        current_phase_id: previousPhase.id,
+        ...(clearThemeOverride ? { theme_zone_id: null } : {}),
+      })
+      .eq("user_id", userId);
+    if (error) return null;
+
+    return { revertedPhaseId: previousPhase.id, revertedPhaseName: previousPhase.name };
+  } catch {
+    return null;
+  }
 }
 
 const DEFAULT_USERNAME_BASE = "aventurier";

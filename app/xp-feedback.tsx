@@ -52,6 +52,31 @@ export function PerfectWeekOverlay({ active }: { active: boolean }) {
   );
 }
 
+/** Tracks a phase-advancement celebration ("nouvelle zone débloquée") that auto-dismisses after ~4s. */
+export function usePhaseAdvanced() {
+  const [phaseName, setPhaseName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (phaseName === null) return;
+    const timer = setTimeout(() => setPhaseName(null), 4000);
+    return () => clearTimeout(timer);
+  }, [phaseName]);
+
+  return { phaseName, trigger: setPhaseName };
+}
+
+export function PhaseAdvancedOverlay({ phaseName }: { phaseName: string | null }) {
+  if (phaseName === null) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none px-6">
+      <div className="panel-rpg panel-rpg-gold animate-celebrate border-2 px-10 py-8 text-center">
+        <p className="text-xs uppercase tracking-widest text-gold">Nouvelle zone débloquée</p>
+        <p className="font-display text-3xl font-bold text-gold">{phaseName}</p>
+      </div>
+    </div>
+  );
+}
+
 export function BadgeChips({ names }: { names?: string[] }) {
   if (!names?.length) return null;
   return (

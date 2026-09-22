@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { ExerciseFamily } from "@/lib/types";
 import type { TreeNodeState } from "@/lib/xp";
 import { logSession } from "./actions";
-import { useLevelUp, LevelUpOverlay, BadgeChips } from "../xp-feedback";
+import { useLevelUp, LevelUpOverlay, BadgeChips, usePhaseAdvanced, PhaseAdvancedOverlay } from "../xp-feedback";
 import { fireConfettiCelebration } from "../confetti";
 
 interface Group {
@@ -13,6 +14,7 @@ interface Group {
 }
 
 export default function LogForm({ groups }: { groups: Group[] }) {
+  const router = useRouter();
   const allNodes = useMemo(() => groups.flatMap((g) => g.nodes), [groups]);
   const firstUnlocked = allNodes.find((n) => n.unlocked);
 
@@ -24,6 +26,7 @@ export default function LogForm({ groups }: { groups: Group[] }) {
     { kind: "success" | "error"; message: string; badges?: string[] } | null
   >(null);
   const { level: levelUp, trigger: triggerLevelUp } = useLevelUp();
+  const { phaseName: phaseAdvanced, trigger: triggerPhaseAdvanced } = usePhaseAdvanced();
 
   const selected = allNodes.find((n) => n.id === exerciseId);
 
@@ -57,6 +60,12 @@ export default function LogForm({ groups }: { groups: Group[] }) {
       fireConfettiCelebration();
       if (result.leveledUp && result.newLevel) {
         triggerLevelUp(result.newLevel);
+      }
+      if (result.newPhaseName) {
+        triggerPhaseAdvanced(result.newPhaseName);
+        // Force le layout racine (<html data-zone>) à se re-rendre tout de
+        // suite avec le nouveau thème, sans attendre une navigation.
+        router.refresh();
       }
     });
   }
@@ -144,6 +153,7 @@ export default function LogForm({ groups }: { groups: Group[] }) {
       </form>
 
       <LevelUpOverlay level={levelUp} />
+      <PhaseAdvancedOverlay phaseName={phaseAdvanced} />
     </>
   );
 }
